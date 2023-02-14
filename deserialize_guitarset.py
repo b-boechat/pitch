@@ -6,6 +6,19 @@ from definitions import AUDIO_SEGMENT_LEN_FRAMES, NOTES_TOTAL_BINS, CONTOURS_TOT
 
 from definitions import *
 
+def formatted_dataset_for_model(filenames):
+    dataset = read_dataset_from_files(filenames)
+    return dataset.map(_zip_for_model)
+
+
+def _zip_for_model(_, X_spec, X_contours, X_notes, X_onsets):
+    return X_spec, {
+        "X_contours": X_contours, 
+        "X_notes" : X_notes,
+        "X_onsets" : X_onsets
+    }
+
+
 def read_dataset_from_files(filenames):
     raw_dataset = tf.data.TFRecordDataset(filenames)
     return _deserialize_dataset(raw_dataset)
