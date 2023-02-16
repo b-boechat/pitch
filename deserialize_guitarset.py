@@ -8,11 +8,10 @@ from definitions import *
 
 def prepare_dataset(filenames, buffer_size, batch_size):
     dataset = read_raw_dataset_from_files(filenames)
-    #dataset.shuffle(buffer_size)
+    dataset = dataset.shuffle(buffer_size)
     dataset = dataset.map(_deserialize_example)
     dataset = dataset.map(_zip_for_training)
-    dataset.batch(batch_size, drop_remainder=True)
-    #dataset.prefetch(tf.data.AUTOTUNE)
+    dataset = dataset.batch(batch_size, drop_remainder=True).prefetch(tf.data.AUTOTUNE)
     return dataset
 
 
