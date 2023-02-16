@@ -6,25 +6,25 @@ from definitions import AUDIO_SEGMENT_LEN_FRAMES, NOTES_TOTAL_BINS, CONTOURS_TOT
 
 from definitions import *
 
-def formatted_dataset_for_model(filenames):
-    dataset = read_dataset_from_files(filenames)
-    return dataset.map(_zip_for_model)
+def prepare_dataset(filenames, buffer_size, batch_size):
+    dataset = read_raw_dataset_from_files(filenames)
+    #dataset.shuffle(buffer_size)
+    dataset = dataset.map(_deserialize_example)
+    dataset = dataset.map(_zip_for_training)
+    dataset.batch(batch_size, drop_remainder=True)
+    #dataset.prefetch(tf.data.AUTOTUNE)
+    return dataset
 
 
-def _zip_for_model(_, X_spec, X_contours, X_notes, X_onsets):
+def _zip_for_training(_, X_spec, X_contours, X_notes, X_onsets):
     return X_spec, {
         "X_contours": X_contours, 
         "X_notes" : X_notes,
         "X_onsets" : X_onsets
     }
 
-
-def read_dataset_from_files(filenames):
-    raw_dataset = tf.data.TFRecordDataset(filenames)
-    return _deserialize_dataset(raw_dataset)
-
-def _deserialize_dataset(raw_dataset):
-    return raw_dataset.map(_deserialize_example)
+def read_raw_dataset_from_files(filenames):
+    return tf.data.TFRecordDataset(filenames)
 
 def _deserialize_example(example_proto):
     """Deserialize a single example from a TFRecord file.
@@ -74,7 +74,7 @@ def _deserialize_example(example_proto):
     return id, X_spec, X_contours, X_notes, X_onsets
 
 
-def visualize_example(example):
+def _visualize_example(example):
     id, X_spec, X_contours, X_notes, X_onsets = example
     plt.figure()
     librosa.display.specshow(X_spec.numpy().transpose(), sr=AUDIO_SAMPLE_RATE, x_axis='time', y_axis='cqt_hz',
@@ -97,7 +97,7 @@ def visualize_example(example):
 
 
 if __name__ == "__main__":
-    dataset = read_dataset_from_files("guitarset_processed/training/split_002.tfrecord")
-    for example in dataset.take(1):
-        print(example)
-        visualize_example(example)
+    dataset = read_raw_dataset_from_files("guitarset_processed/training/split_002.tfrecord")
+    for example_proto in dataset.take(1):
+        example = _deserialize_example(example_proto)
+        _visualize_example(example)

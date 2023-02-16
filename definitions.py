@@ -1,8 +1,8 @@
 from math import floor, ceil, log2
 
-
 RANDOM_SEED = 1
 GUITARSET_BASE_PATH = "D:\\mirdata datasets\guitarset"
+GUITARSET_PROCESSED_BASE_PATH = "guitarset_processed"
 AUDIO_SAMPLE_RATE = 22050 # A referência usa 22050 (provavelmente para adequar databases diferentes). Mas o Guitarset tem sample rate 44100, então isso pode ser aproveitado.
 
 # Total de semitons das anotações.
@@ -38,3 +38,13 @@ AUDIO_SEGMENT_LEN_SECS = 2.0 # Segmementos em segundos
 AUDIO_SEGMENT_LEN_FRAMES = int(AUDIO_SEGMENT_LEN_SECS * AUDIO_SAMPLE_RATE // CQT_HOP_LENGTH) # Também pode ser obtido com librosa.time_to_frames
 
 NUM_TRACKS_PER_RECORD_FILE = 8
+
+
+
+# Parâmetros de treinamento.
+DEFAULT_LEARNING_RATE = 0.001
+DEFAULT_SHUFFLE_BUFFER = 10
+DEFAULT_BATCH = 2
+DEFAULT_EPOCHS = 4
+DEFAULT_LABEL_SMOOTHING = 0.2
+DEFAULT_ONSET_POSITIVE_WEIGHT = 0.5
