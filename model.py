@@ -1,5 +1,5 @@
 import tensorflow as tf
-from keras import layers
+from tensorflow import keras
 from keras.backend import int_shape
 
 from definitions import AUDIO_SEGMENT_LEN_FRAMES, CONTOURS_BINS_PER_SEMITONE, CONTOURS_TOTAL_BINS, CONTOURS_TOTAL_BINS, CQT_TOTAL_BINS, HARMONICS_LIST
@@ -12,7 +12,7 @@ def define_model(plot_summary=False):
 
     # Batch norm CQT and create HCQT (non-trainable layer)
     x = tf.expand_dims(inputs, -1)
-    x = layers.BatchNormalization()(x)
+    x = keras.layers.BatchNormalization()(x)
     x_stack = HarmonicStacking(
             bins_per_semitone=CONTOURS_BINS_PER_SEMITONE,
             harmonics=HARMONICS_LIST,
@@ -22,31 +22,31 @@ def define_model(plot_summary=False):
     # =========== Contour layers ============
 
     # First layer. 16 Conv2D 5 x 5 + Batch norm + ReLu
-    x = layers.Conv2D(
-        #filters=16,
-        filters=1,
+    x = keras.layers.Conv2D(
+        filters=16,
+        #filters=1,
         kernel_size=(5,5),
         padding='same', # Pad with zeros so output has the same size as input.
         kernel_initializer=tf.keras.initializers.VarianceScaling(scale=2.0, mode="fan_avg", distribution="uniform", seed=None),
         kernel_constraint=tf.keras.constraints.UnitNorm(axis=[0, 1, 2])
     )(x_stack)
-    x = layers.BatchNormalization()(x)
-    x = layers.ReLU()(x)
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.ReLU()(x)
 
     # Second layer. 8 Conv2D 3 x 39 + Batch norm + ReLu
-    x = layers.Conv2D(
-        #filters=8,
-        filters=1,
+    x = keras.layers.Conv2D(
+        filters=8,
+        #filters=1,
         kernel_size=(3,39),
         padding='same', # Pad with zeros so output has the same size as input.
         kernel_initializer=tf.keras.initializers.VarianceScaling(scale=2.0, mode="fan_avg", distribution="uniform", seed=None),
         kernel_constraint=tf.keras.constraints.UnitNorm(axis=[0, 1, 2])
     )(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.ReLU()(x)
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.ReLU()(x)
 
     # Third and final layer. 1 Conv2D 5 x 5 + Sigmoid + Flatten frequencies
-    x = layers.Conv2D(
+    x = keras.layers.Conv2D(
         filters=1,
         kernel_size=(5,5),
         padding='same',
@@ -62,19 +62,19 @@ def define_model(plot_summary=False):
     x = tf.expand_dims(x_contours, -1)
 
     # First layer. 32 Conv2D 7 x 7, stride 1 x 3 + ReLu
-    x = layers.Conv2D(
-        #filters=32,
-        filters=1,
+    x = keras.layers.Conv2D(
+        filters=32,
+        #filters=1,
         kernel_size=(7,7),
         strides=(1, 3),
         padding='same', # Pad with zeros so output has the same time size as input, and 1/3 frequency size.
         kernel_initializer=tf.keras.initializers.VarianceScaling(scale=2.0, mode="fan_avg", distribution="uniform", seed=None),
         kernel_constraint=tf.keras.constraints.UnitNorm(axis=[0, 1, 2])
     )(x)
-    x = layers.ReLU()(x)
+    x = keras.layers.ReLU()(x)
 
     # Second layer. 1 Conv2D 7 x 3 + Sigmoid + Flatten frequencies
-    x_notes_stacked = layers.Conv2D(
+    x_notes_stacked = keras.layers.Conv2D(
         filters=1,
         kernel_size=(7,3),
         padding='same', # Pad with zeros so output has the same size as input.
@@ -88,23 +88,23 @@ def define_model(plot_summary=False):
     # =========== Onset layers ============
 
     # First layer. 32 Conv2D 7 x 7, stride 1 x 3, HCQT input + Batch norm + ReLu
-    x = layers.Conv2D(
-        #filters=32,
-        filters=1,
+    x = keras.layers.Conv2D(
+        filters=32,
+        #filters=1,
         kernel_size=(7,7),
         strides=(1, 3),
         padding='same', # Pad with zeros so output has the same size as input.
         kernel_initializer=tf.keras.initializers.VarianceScaling(scale=2.0, mode="fan_avg", distribution="uniform", seed=None),
         kernel_constraint=tf.keras.constraints.UnitNorm(axis=[0, 1, 2])
     )(x_stack)
-    x = layers.BatchNormalization()(x)
-    x = layers.ReLU()(x)
+    x = keras.layers.BatchNormalization()(x)
+    x = keras.layers.ReLU()(x)
 
     # Concatenate with x_notes before flattening.
-    x = layers.Concatenate(axis=3)([x_notes_stacked, x])
+    x = keras.layers.Concatenate(axis=3)([x_notes_stacked, x])
 
     # Second layer. 1 Conv2D 3 x 3 + Sigmoid + Flatten frequencies
-    x = layers.Conv2D(
+    x = keras.layers.Conv2D(
         filters=1,
         kernel_size=(3,3),
         padding='same', # Pad with zeros so output has the same size as input.

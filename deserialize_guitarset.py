@@ -1,7 +1,7 @@
 import tensorflow as tf
-import matplotlib.pyplot as plt
-import librosa
-import librosa.display
+#import matplotlib.pyplot as plt
+#import librosa
+#import librosa.display
 from definitions import AUDIO_SEGMENT_LEN_FRAMES, NOTES_TOTAL_BINS, CONTOURS_TOTAL_BINS
 
 from definitions import *
@@ -11,7 +11,7 @@ def prepare_dataset(filenames, buffer_size, batch_size):
     dataset = dataset.shuffle(buffer_size)
     dataset = dataset.map(_deserialize_example)
     dataset = dataset.map(_zip_for_training)
-    dataset = dataset.batch(batch_size, drop_remainder=True).prefetch(tf.data.AUTOTUNE)
+    dataset = dataset.batch(batch_size, drop_remainder=True)#.prefetch(tf.data.AUTOTUNE)
     return dataset
 
 
@@ -73,25 +73,25 @@ def _deserialize_example(example_proto):
     return id, X_spec, X_contours, X_notes, X_onsets
 
 
-def _visualize_example(example):
-    id, X_spec, X_contours, X_notes, X_onsets = example
-    plt.figure()
-    librosa.display.specshow(X_spec.numpy().transpose(), sr=AUDIO_SAMPLE_RATE, x_axis='time', y_axis='cqt_hz',
-                        hop_length=CQT_HOP_LENGTH, fmin=MINIMUM_ANNOTATION_FREQUENCY, bins_per_octave=CONTOURS_BINS_PER_OCTAVE, tuning=0.0)
+# def _visualize_example(example):
+#     id, X_spec, X_contours, X_notes, X_onsets = example
+#     plt.figure()
+#     librosa.display.specshow(X_spec.numpy().transpose(), sr=AUDIO_SAMPLE_RATE, x_axis='time', y_axis='cqt_hz',
+#                         hop_length=CQT_HOP_LENGTH, fmin=MINIMUM_ANNOTATION_FREQUENCY, bins_per_octave=CONTOURS_BINS_PER_OCTAVE, tuning=0.0)
 
-    plt.figure()
-    librosa.display.specshow(X_contours.numpy().transpose(), sr=AUDIO_SAMPLE_RATE, x_axis='time', y_axis='cqt_hz',
-                        hop_length=CQT_HOP_LENGTH, fmin=MINIMUM_ANNOTATION_FREQUENCY, bins_per_octave=CONTOURS_BINS_PER_OCTAVE, tuning=0.0)
+#     plt.figure()
+#     librosa.display.specshow(X_contours.numpy().transpose(), sr=AUDIO_SAMPLE_RATE, x_axis='time', y_axis='cqt_hz',
+#                         hop_length=CQT_HOP_LENGTH, fmin=MINIMUM_ANNOTATION_FREQUENCY, bins_per_octave=CONTOURS_BINS_PER_OCTAVE, tuning=0.0)
 
-    plt.figure()
-    librosa.display.specshow(X_notes.numpy().transpose(), sr=AUDIO_SAMPLE_RATE, x_axis='time', y_axis='cqt_hz',
-                        hop_length=CQT_HOP_LENGTH, fmin=MINIMUM_ANNOTATION_FREQUENCY, bins_per_octave=NOTES_BINS_PER_OCTAVE, tuning=0.0)
+#     plt.figure()
+#     librosa.display.specshow(X_notes.numpy().transpose(), sr=AUDIO_SAMPLE_RATE, x_axis='time', y_axis='cqt_hz',
+#                         hop_length=CQT_HOP_LENGTH, fmin=MINIMUM_ANNOTATION_FREQUENCY, bins_per_octave=NOTES_BINS_PER_OCTAVE, tuning=0.0)
 
-    plt.figure()
-    librosa.display.specshow(X_onsets.numpy().transpose(), sr=AUDIO_SAMPLE_RATE, x_axis='time', y_axis='cqt_hz',
-                        hop_length=CQT_HOP_LENGTH, fmin=MINIMUM_ANNOTATION_FREQUENCY, bins_per_octave=NOTES_BINS_PER_OCTAVE, tuning=0.0)
+#     plt.figure()
+#     librosa.display.specshow(X_onsets.numpy().transpose(), sr=AUDIO_SAMPLE_RATE, x_axis='time', y_axis='cqt_hz',
+#                         hop_length=CQT_HOP_LENGTH, fmin=MINIMUM_ANNOTATION_FREQUENCY, bins_per_octave=NOTES_BINS_PER_OCTAVE, tuning=0.0)
 
-    plt.show()
+#     plt.show()
 
 
 
@@ -99,4 +99,4 @@ if __name__ == "__main__":
     dataset = read_raw_dataset_from_files("guitarset_processed/training/split_002.tfrecord")
     for example_proto in dataset.take(1):
         example = _deserialize_example(example_proto)
-        _visualize_example(example)
+        #_visualize_example(example)
