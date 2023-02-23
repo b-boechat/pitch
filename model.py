@@ -2,12 +2,22 @@ import tensorflow as tf
 from tensorflow import keras
 from keras.backend import int_shape
 
-from definitions import AUDIO_SEGMENT_LEN_FRAMES, CONTOURS_BINS_PER_SEMITONE, CONTOURS_TOTAL_BINS, CONTOURS_TOTAL_BINS, CQT_TOTAL_BINS, HARMONICS_LIST
+from definitions import AUDIO_SEGMENT_LEN_FRAMES, CONTOURS_BINS_PER_SEMITONE, CONTOURS_TOTAL_BINS, CONTOURS_TOTAL_BINS, CQT_TOTAL_BINS, HARMONICS_LIST, \
+    DEFAULT_LEARNING_RATE, DEFAULT_LABEL_SMOOTHING, DEFAULT_ONSET_POSITIVE_WEIGHT
 from imported_code import FlattenFreqCh, HarmonicStacking, weighted_transcription_loss
 
-def define_model(plot_summary=False):
+def get_compiled_model(learning_rate, label_smoothing=DEFAULT_LABEL_SMOOTHING, onset_positive_weight=DEFAULT_ONSET_POSITIVE_WEIGHT, plot_summary=False):
+    model = define_model(plot_summary=False)
+    model.compile(loss=get_loss_dictionary(label_smoothing, onset_positive_weight), 
+                optimizer=tf.keras.optimizers.Adam(learning_rate = learning_rate))
+    if plot_summary:
+        model.summary()
 
-    # Define input shape. At the moment, considering CQT as input.
+    return model
+
+
+def define_model(plot_summary):
+    # Define input shape, which is a CQT-like representation.
     inputs = tf.keras.Input(shape=(AUDIO_SEGMENT_LEN_FRAMES, CQT_TOTAL_BINS))
 
     # Batch norm CQT and create HCQT (non-trainable layer)
@@ -134,6 +144,11 @@ def get_loss_dictionary(label_smoothing, onset_positive_weight):
         "X_notes": loss_notes,
         "X_onsets": loss_onsets
     }
+
+def restore_model_from_weights(saved_model_path, learning_rate=DEFAULT_LEARNING_RATE, label_smoothing=DEFAULT_LABEL_SMOOTHING, onset_positive_weight=DEFAULT_ONSET_POSITIVE_WEIGHT):
+    model = get_compiled_model(learning_rate=learning_rate, label_smoothing=label_smoothing, onset_positive_weight=onset_positive_weight)
+    model.load_weights(saved_model_path)
+    return model
 
 if __name__ == "__main__":
     define_model(plot_summary=True)

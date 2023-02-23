@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 #import matplotlib.pyplot as plt
 #import librosa
 #import librosa.display
@@ -7,15 +8,23 @@ from definitions import AUDIO_SEGMENT_LEN_FRAMES, NOTES_TOTAL_BINS, CONTOURS_TOT
 from definitions import *
 
 def prepare_dataset(filenames, buffer_size, batch_size):
+    """Fetch and prepare a dataset for training or evaluation.
+    """
     dataset = read_raw_dataset_from_files(filenames)
     dataset = dataset.shuffle(buffer_size)
     dataset = dataset.map(_deserialize_example)
-    dataset = dataset.map(_zip_for_training)
+    dataset = dataset.map(zip_for_model)
     dataset = dataset.batch(batch_size, drop_remainder=True)#.prefetch(tf.data.AUTOTUNE)
     return dataset
 
+def fetch_dataset(filenames):
+    """Fetch a dataset without shuffling, batching or zipping.
+    """
+    dataset = read_raw_dataset_from_files(filenames)
+    dataset = dataset.map(_deserialize_example)
+    return dataset
 
-def _zip_for_training(_, X_spec, X_contours, X_notes, X_onsets):
+def zip_for_model(_, X_spec, X_contours, X_notes, X_onsets):
     return X_spec, {
         "X_contours": X_contours, 
         "X_notes" : X_notes,
@@ -93,6 +102,23 @@ def _deserialize_example(example_proto):
 
 #     plt.show()
 
+def zipped_single_to_batch(single):
+    """Transform a single zipped example into a batch of size 1. Useful for doing predictions on a single element.
+    """
+    return np.expand_dims(single[0], axis=0), {
+        "X_contours": np.expand_dims(single[1]["X_contours"], axis=0), 
+        "X_notes": np.expand_dims(single[1]["X_notes"], axis=0), 
+        "X_onsets": np.expand_dims(single[1]["X_onsets"], axis=0), 
+    }
+
+def output_batch_to_single(batch):
+    """Transform a batch output of size 1 into a single output dictionary. Useful for accessing predicted features.
+    """
+    return {
+        "X_contours": batch["X_contours"][0], 
+        "X_notes": batch["X_notes"][0], 
+        "X_onsets": batch["X_onsets"][0], 
+    }
 
 
 if __name__ == "__main__":
