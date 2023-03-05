@@ -15,7 +15,7 @@ def visualize_predictions(saved_model_path, data_path_list):
                                        onset_positive_weight = DEFAULT_ONSET_POSITIVE_WEIGHT)
 
     dataset = fetch_dataset(data_path_list)
-    for example in dataset.take(10):
+    for example in dataset:
         id, X_spec, X_contours, X_notes, X_onsets = example
 
         pred = output_batch_to_single(
@@ -25,6 +25,11 @@ def visualize_predictions(saved_model_path, data_path_list):
 
         #print(X_contours, end="\n\n\n")
         #print(pred)
+
+        plt.figure()
+        specshow(X_spec.numpy().transpose(), sr=AUDIO_SAMPLE_RATE, x_axis='time', y_axis='cqt_hz',
+                 hop_length=CQT_HOP_LENGTH, fmin=MINIMUM_ANNOTATION_FREQUENCY, tuning=0.0,bins_per_octave=CONTOURS_BINS_PER_OCTAVE,
+                 )
 
         fig, axs = plt.subplots(2, 2)
         # ======== Plot contours
