@@ -2,7 +2,7 @@ import numpy as np
 cimport cython
 from libc.math cimport pow
 
-def swgm_wrapper(X, beta=0.3, double max_gamma = 20.0):
+def swgm_cython_wrapper(X, beta=0.3, double max_gamma = 20.0):
     return swgm(X, beta, max_gamma)
 
 

@@ -10,12 +10,8 @@ IF DEBUGPRINT:
     import colorama
     from debug import print_arr
 
-#IF DEBUGTIMER:
-#    from libc.time cimport clock_t, clock
 
-
-def fast_local_sparsity_wrapper(X, freq_width=39, time_width=11, eta=8.0):
-    #print(f"freq_width_sparsity = {freq_width_sparsity}\nfreq_width_energy = {freq_width_energy}\ntime_width = {time_width}\nzeta = {zeta}")
+def fls_cython_wrapper(X, freq_width=39, time_width=11, eta=8.0):
     return fast_local_sparsity(X, freq_width, time_width, eta)
 
 @cython.boundscheck(False)

@@ -257,4 +257,4 @@ class GuitarsetSerializer:
 
 if __name__ == "__main__":
     serializer = GuitarsetSerializer()
-    serializer.serialize(splits=[0.1, 0.9], split_names=["training", "test"], seed=1, source_dir="guitarset", split_dirs=["dev/training", "dev/test"])
+    serializer.serialize(splits=[0.9, 0.1], split_names=["training", "test"], seed=1, source_dir="guitarset", split_dirs=["dev/training", "dev/test"])
