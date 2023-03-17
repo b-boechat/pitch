@@ -57,7 +57,7 @@ class GuitarsetSerializer:
         else: # fls
             spec = fls_cython_wrapper(audio_data, **kwargs)
         spec *= audio_energy/np.sum(spec, axis=None)
-        return spec.transpose()
+        return librosa.power_to_db(spec).transpose()
 
 
     def _get_cqt_spectrogram(self, audio_data):
@@ -148,8 +148,8 @@ class GuitarsetSerializer:
 
         audio_data, _ = librosa.load(track.audio_mic_path, sr=self.audio_sample_rate)
         
-        # Calcula o espectrograma em dB de CQT para o arquivo de áudio. Ele tem dimensão FREQUÊNCIA X TEMPO.
-        X_spec = self._get_cqt_spectrogram(audio_data)
+        # Calcula o espectrograma em dB para o arquivo de áudio. Ele tem dimensão FREQUÊNCIA X TEMPO, e pode ser uma CQT ou uma representação combinada implementada.
+        X_spec = self._get_spectrogram(audio_data, **self.combination_params)
 
         # Calcula o número de segmentos contidos no áudio. 
         num_segments = int(ceil(X_spec.shape[0] / self.audio_segment_len_frames))
@@ -257,4 +257,4 @@ class GuitarsetSerializer:
 
 if __name__ == "__main__":
     serializer = GuitarsetSerializer()
-    serializer.serialize(splits=[0.9, 0.1], split_names=["training", "test"], seed=1, source_dir="guitarset", split_dirs=["dev/training", "dev/test"])
+    serializer.serialize(splits=[0.1, 0.9], split_names=["training", "test"], seed=1, source_dir="guitarset", split_dirs=["dev/training", "dev/test"])
