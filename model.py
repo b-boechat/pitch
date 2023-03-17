@@ -57,19 +57,19 @@ def define_model(plot_summary):
 
     # Third and final layer. 1 Conv2D 5 x 5 + Sigmoid + Flatten frequencies
     x = keras.layers.Conv2D(
-        filters=1,
-        kernel_size=(5,5),
-        padding='same',
-        activation='sigmoid',
-        kernel_initializer=tf.keras.initializers.VarianceScaling(scale=2.0, mode="fan_avg", distribution="uniform", seed=None),
-        kernel_constraint=tf.keras.constraints.UnitNorm(axis=[0, 1, 2])
-    )(x)
+         filters=1,
+         kernel_size=(5,5),
+         padding='same',
+         activation='sigmoid',
+         kernel_initializer=tf.keras.initializers.VarianceScaling(scale=2.0, mode="fan_avg", distribution="uniform", seed=None),
+         kernel_constraint=tf.keras.constraints.UnitNorm(axis=[0, 1, 2])
+     )(x)
 
     x_contours = FlattenFreqCh()(x)
 
     # =========== Note layers ============
 
-    x = tf.expand_dims(x_contours, -1)
+    #x = tf.expand_dims(x_contours, -1)
 
     # First layer. 32 Conv2D 7 x 7, stride 1 x 3 + ReLu
     x = keras.layers.Conv2D(
@@ -137,7 +137,7 @@ def non_weighted_transcription_loss(y_true, y_pred, label_smoothing):
 
 def get_loss_dictionary(label_smoothing, onset_positive_weight):
     loss_contours = lambda y_true, y_pred: non_weighted_transcription_loss(y_true, y_pred, label_smoothing)
-    loss_notes = loss_contours
+    loss_notes = lambda y_true, y_pred: non_weighted_transcription_loss(y_true, y_pred, label_smoothing)
     loss_onsets = lambda y_true, y_pred: weighted_transcription_loss(y_true, y_pred, label_smoothing, onset_positive_weight)
     return {
         "X_contours": loss_contours,

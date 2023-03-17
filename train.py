@@ -34,11 +34,10 @@ def train_prelim(learning_rate, label_smoothing, buffer_size, batch_size, onset_
 
 if __name__ == "__main__":
     with tf.device('/GPU:1'):
-        train_prelim(verbose = 1, learning_rate = 0.0001, label_smoothing = 0.2, onset_positive_weight = 0.95, buffer_size = 100, batch_size = 16, epochs = 20, save_path="saved_models/testchanges.h5")
         # print("Model: lr = 1e-2")
         # train_prelim(verbose = 1, learning_rate = 0.01, label_smoothing = 0.2, onset_positive_weight = 0.95, buffer_size = 100, batch_size = 16, epochs = 100, save_path="saved_models/trained_lr_e2.h5")
-        # print("Model: lr = 1e-3")
-        # train_prelim(verbose = 1, learning_rate = 0.001, label_smoothing = 0.2, onset_positive_weight = 0.95, buffer_size = 100, batch_size = 16, epochs = 100, save_path = "saved_models/trained_lr_e3.h5")
+        print("Model: lr = 1e-3")
+        #train_prelim(verbose = 1, learning_rate = 0.001, label_smoothing = 0.2, onset_positive_weight = 0.95, buffer_size = 100, batch_size = 32, epochs = 200, save_path = "saved_models/trained_lr_e3.h5")
         # print("Model: lr = 1e-4")
         # train_prelim(verbose = 1, learning_rate = 0.0001, label_smoothing = 0.2, onset_positive_weight = 0.95, buffer_size = 100, batch_size = 32, epochs = 100, save_path = "saved_models/trained_lr_e4.h5")
         # print("Model: lr = 1e-5")
