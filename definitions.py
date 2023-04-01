@@ -2,8 +2,10 @@ from math import floor, ceil, log2
 
 RANDOM_SEED = 1
 GUITARSET_BASE_PATH = "D:\\mirdata datasets\guitarset"
-GUITARSET_PROCESSED_BASE_PATH = "guitarset_processed"
+GUITARSET_PROCESSED_BASE_PATH = "guitarset_cqt"
 AUDIO_SAMPLE_RATE = 22050 # A referência usa 22050 (provavelmente para adequar databases diferentes). Mas o Guitarset tem sample rate 44100, então isso pode ser aproveitado.
+
+SAVED_MODELS_BASE_PATH="saved_models"
 
 # Total de semitons das anotações.
 NUM_ANNOTATION_SEMITONES = 88

@@ -24,8 +24,8 @@ def train_wrapper(args):
                 onset_positive_weight=args.onset_positive_weight,
                 verbose=args.verbosity,
                 data_base_path=args.data_base_path,
-                output_path=args.output_path,
-                plot_history=args.plot_history
+                output_folder_id=args.output_folder_id,
+                save_history=args.save_history
         )
 
 def parse_console():
@@ -50,8 +50,8 @@ def parse_console():
 
     sp_train.add_argument("-v", "--verbosity", dest="verbosity", action="count", default=0)
 
-    sp_train.add_argument("-o", "--output_path", dest="output_path", default=None)
-    sp_train.add_argument("-p", "--plot_history", dest="plot_history", action="store_true")
+    sp_train.add_argument("-o", "--output_folder", dest="output_folder_id", default=None)
+    sp_train.add_argument("-y", "--save_history", dest="save_history", action="store_true")
 
 
 
