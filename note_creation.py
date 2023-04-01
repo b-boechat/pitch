@@ -43,6 +43,7 @@ N_PITCH_BEND_TICKS = 8192
 MAX_FREQ_IDX = 87
 
 
+# Bernardo: Made MIDI creation optional (create_midi option) and changed dictionary keys to ("X_contours", "X_notes", "X_onsets")
 def model_output_to_notes(
     output: Dict[str, np.array],
     onset_thresh: float,
@@ -54,15 +55,16 @@ def model_output_to_notes(
     include_pitch_bends: bool = True,
     multiple_pitch_bends: bool = False,
     melodia_trick: bool = True,
-) -> Tuple[pretty_midi.PrettyMIDI, List[Tuple[float, float, int, float, Optional[List[int]]]]]:
+    create_midi: bool = True
+):
     """Convert model output to MIDI
 
     Args:
         output: A dictionary with shape
-            {
-                'note': array of shape (n_times, n_freqs),
-                'onset': array of shape (n_times, n_freqs),
-                'contour': array of shape (n_times, 3*n_freqs)
+            { 
+                'X_notes': array of shape (n_times, n_freqs),
+                'X_onsets': array of shape (n_times, n_freqs),
+                'X_contours': array of shape (n_times, 3*n_freqs)
             }
             representing the output of the basic pitch model.
         onset_thresh: Minimum amplitude of an onset activation to be considered an onset.
@@ -73,14 +75,15 @@ def model_output_to_notes(
         include_pitch_bends: If True, include pitch bends.
         multiple_pitch_bends: If True, allow overlapping notes in midi file to have pitch bends.
         melodia_trick: Use the melodia post-processing step.
+        create_midi: If True, creates MIDI file. Otherwise, just return the note events.
 
     Returns:
         midi : pretty_midi.PrettyMIDI object
         note_events: A list of note event tuples (start_time_s, end_time_s, pitch_midi, amplitude)
     """
-    frames = output["notes"]
-    onsets = output["onsets"]
-    contours = output["contours"]
+    frames = output["X_notes"]
+    onsets = output["X_onsets"]
+    contours = output["X_contours"]
 
     estimated_notes = output_to_notes_polyphonic(
         frames,
@@ -103,7 +106,10 @@ def model_output_to_notes(
         (times_s[note[0]], times_s[note[1]], note[2], note[3], note[4]) for note in estimated_notes_with_pitch_bend
     ]
 
-    return note_events_to_midi(estimated_notes_time_seconds, multiple_pitch_bends), estimated_notes_time_seconds
+    if create_midi:
+        return note_events_to_midi(estimated_notes_time_seconds, multiple_pitch_bends), estimated_notes_time_seconds
+    
+    return estimated_notes_time_seconds
 
 
 def sonify_midi(midi: pretty_midi.PrettyMIDI, save_path: Union[pathlib.Path, str], sr: Optional[int] = 44100) -> None:

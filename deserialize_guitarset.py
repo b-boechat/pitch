@@ -1,3 +1,4 @@
+import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 import tensorflow as tf
 import numpy as np
 #import matplotlib.pyplot as plt
@@ -7,32 +8,34 @@ from definitions import AUDIO_SEGMENT_LEN_FRAMES, NOTES_TOTAL_BINS, CONTOURS_TOT
 
 from definitions import *
 
-def prepare_dataset(filenames, buffer_size, batch_size):
+def prepare_dataset(filenames, buffer_size, batch_size, num_parallel_reads=None):
     """Fetch and prepare a dataset for training or evaluation.
     """
-    dataset = read_raw_dataset_from_files(filenames)
+    dataset = read_raw_dataset_from_files(filenames, num_parallel_reads)
     dataset = dataset.shuffle(buffer_size)
     dataset = dataset.map(_deserialize_example)
     dataset = dataset.map(zip_for_model)
     dataset = dataset.batch(batch_size, drop_remainder=True)#.prefetch(tf.data.AUTOTUNE)
     return dataset
 
-def fetch_dataset(filenames):
+def fetch_dataset(filenames, num_parallel_reads=None):
     """Fetch a dataset without shuffling, batching or zipping.
     """
-    dataset = read_raw_dataset_from_files(filenames)
+    dataset = read_raw_dataset_from_files(filenames, num_parallel_reads)
     dataset = dataset.map(_deserialize_example)
     return dataset
 
 def zip_for_model(_, X_spec, X_contours, X_notes, X_onsets):
+    """Transform an example (as returned by deserialize example) into a tuple (inputs, outputs), expected by model.fit.
+    """
     return X_spec, {
         "X_contours": X_contours, 
         "X_notes" : X_notes,
         "X_onsets" : X_onsets
     }
 
-def read_raw_dataset_from_files(filenames):
-    return tf.data.TFRecordDataset(filenames)
+def read_raw_dataset_from_files(filenames, num_parallel_reads=None):
+    return tf.data.TFRecordDataset(filenames, num_parallel_reads=num_parallel_reads)
 
 def _deserialize_example(example_proto):
     """Deserialize a single example from a TFRecord file.
@@ -81,27 +84,6 @@ def _deserialize_example(example_proto):
 
     return id, X_spec, X_contours, X_notes, X_onsets
 
-
-# def _visualize_example(example):
-#     id, X_spec, X_contours, X_notes, X_onsets = example
-#     plt.figure()
-#     librosa.display.specshow(X_spec.numpy().transpose(), sr=AUDIO_SAMPLE_RATE, x_axis='time', y_axis='cqt_hz',
-#                         hop_length=CQT_HOP_LENGTH, fmin=MINIMUM_ANNOTATION_FREQUENCY, bins_per_octave=CONTOURS_BINS_PER_OCTAVE, tuning=0.0)
-
-#     plt.figure()
-#     librosa.display.specshow(X_contours.numpy().transpose(), sr=AUDIO_SAMPLE_RATE, x_axis='time', y_axis='cqt_hz',
-#                         hop_length=CQT_HOP_LENGTH, fmin=MINIMUM_ANNOTATION_FREQUENCY, bins_per_octave=CONTOURS_BINS_PER_OCTAVE, tuning=0.0)
-
-#     plt.figure()
-#     librosa.display.specshow(X_notes.numpy().transpose(), sr=AUDIO_SAMPLE_RATE, x_axis='time', y_axis='cqt_hz',
-#                         hop_length=CQT_HOP_LENGTH, fmin=MINIMUM_ANNOTATION_FREQUENCY, bins_per_octave=NOTES_BINS_PER_OCTAVE, tuning=0.0)
-
-#     plt.figure()
-#     librosa.display.specshow(X_onsets.numpy().transpose(), sr=AUDIO_SAMPLE_RATE, x_axis='time', y_axis='cqt_hz',
-#                         hop_length=CQT_HOP_LENGTH, fmin=MINIMUM_ANNOTATION_FREQUENCY, bins_per_octave=NOTES_BINS_PER_OCTAVE, tuning=0.0)
-
-#     plt.show()
-
 def zipped_single_to_batch(single):
     """Transform a single zipped example into a batch of size 1. Useful for doing predictions on a single element.
     """
@@ -124,5 +106,5 @@ def output_batch_to_single(batch):
 if __name__ == "__main__":
     dataset = read_raw_dataset_from_files("guitarset_processed/training/split_002.tfrecord")
     for example_proto in dataset.take(1):
-        example = _deserialize_example(example_proto)
+        print(_deserialize_example(example_proto))
         #_visualize_example(example)

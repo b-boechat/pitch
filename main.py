@@ -1,8 +1,11 @@
 import argparse as ap
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+import tensorflow as tf
 from definitions import DEFAULT_BATCH, DEFAULT_ONSET_POSITIVE_WEIGHT, \
     DEFAULT_SHUFFLE_BUFFER, DEFAULT_LEARNING_RATE, DEFAULT_LABEL_SMOOTHING, \
     GUITARSET_PROCESSED_BASE_PATH, DEFAULT_EPOCHS
-from train import train_prelim
+from train import train
 
 def train_wrapper(args):
     if args.verbosity > 2:
@@ -10,14 +13,20 @@ def train_wrapper(args):
     elif args.verbosity < 0:
         args.verbosity = 0
 
-    # Todo colocar os outros argumentos
-    train_prelim(lr=args.learning_rate,
-            label_smoothing=args.label_smoothing,
-            buffer_size=args.shuffle_buffer,
-            batch_size=args.batch_size,
-            onset_positive_weight=args.onset_positive_weight,
-            verbose=args.verbosity
-    )
+    print(args)
+
+    with tf.device('/GPU:1'):
+        train(learning_rate=args.learning_rate,
+                label_smoothing=args.label_smoothing,
+                buffer_size=args.shuffle_buffer,
+                batch_size=args.batch_size,
+                epochs=args.epochs,
+                onset_positive_weight=args.onset_positive_weight,
+                verbose=args.verbosity,
+                data_base_path=args.data_base_path,
+                output_path=args.output_path,
+                plot_history=args.plot_history
+        )
 
 def parse_console():
     parser = ap.ArgumentParser(description="Interface para treinamento e avaliação do sistema de detecção de frequência fundamental baseado no \"basic pitch\"")
@@ -36,10 +45,14 @@ def parse_console():
     sp_train.add_argument("-l", "--smoothing", dest="label_smoothing", type=float, metavar="LABEL_SMOOTHING", default=DEFAULT_LABEL_SMOOTHING)
     sp_train.add_argument("-w", "--weight", dest="onset_positive_weight", type=float, default=DEFAULT_ONSET_POSITIVE_WEIGHT)
 
-    sp_train.add_argument("-d", "--data_path", dest="data_path", default=GUITARSET_PROCESSED_BASE_PATH)
-    sp_train.add_argument("-n", "--no_test", dest="no_test", action="store_true")
+    sp_train.add_argument("-i", "--data_base_path", dest="data_base_path", default=GUITARSET_PROCESSED_BASE_PATH)
+    #sp_train.add_argument("-n", "--no_test", dest="no_test", action="store_true")
 
     sp_train.add_argument("-v", "--verbosity", dest="verbosity", action="count", default=0)
+
+    sp_train.add_argument("-o", "--output_path", dest="output_path", default=None)
+    sp_train.add_argument("-p", "--plot_history", dest="plot_history", action="store_true")
+
 
 
     args = parser.parse_args()
