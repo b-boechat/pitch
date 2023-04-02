@@ -6,6 +6,7 @@ GUITARSET_PROCESSED_BASE_PATH = "guitarset_cqt"
 AUDIO_SAMPLE_RATE = 22050 # A referência usa 22050 (provavelmente para adequar databases diferentes). Mas o Guitarset tem sample rate 44100, então isso pode ser aproveitado.
 
 SAVED_MODELS_BASE_PATH="saved_models"
+RAW_DATASETS_BASE_PATH="raw_datasets"
 PROCESSED_DATASETS_BASE_PATH="processed"
 
 # Total de semitons das anotações.

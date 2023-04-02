@@ -10,14 +10,14 @@ from math import ceil
 from definitions import NUM_TRACKS_PER_RECORD_FILE, AUDIO_SAMPLE_RATE, AUDIO_SEGMENT_LEN_FRAMES, \
                         CQT_HOP_LENGTH, CONTOURS_TOTAL_BINS, MINIMUM_ANNOTATION_FREQUENCY, \
                         CONTOURS_BINS_PER_OCTAVE, NOTES_TOTAL_BINS, NOTES_BINS_PER_OCTAVE , \
-                        CQT_TOTAL_BINS, PROCESSED_DATASETS_BASE_PATH
+                        CQT_TOTAL_BINS, RAW_DATASETS_BASE_PATH, PROCESSED_DATASETS_BASE_PATH
 from swgm import swgm_cython_wrapper
 from fls import fls_cython_wrapper
 
 
 class GuitarsetSerializer:
     def __init__(self, destination_base_dir_name="test", 
-                 source_dir="guitarset",
+                 source_dir_name="guitarset",
                  num_tracks_per_record_file=NUM_TRACKS_PER_RECORD_FILE,
                  audio_sample_rate=AUDIO_SAMPLE_RATE, 
                  audio_segment_len_frames=AUDIO_SEGMENT_LEN_FRAMES, 
@@ -36,7 +36,7 @@ class GuitarsetSerializer:
         Continue docstring.
         """
         self.destination_base_dir_name = destination_base_dir_name
-        self.source_dir = source_dir
+        self.source_dir_name = source_dir_name
         self.num_tracks_per_record_file = num_tracks_per_record_file
         self.audio_sample_rate = audio_sample_rate
         self.audio_segment_len_frames = audio_segment_len_frames
@@ -63,22 +63,22 @@ class GuitarsetSerializer:
         specs_tensor = np.square(np.abs(specs_tensor)).astype(np.double)
         specs_tensor *= audio_energy / np.linalg.norm(specs_tensor, axis=(1, 2), keepdims=True)
         if self.combination_method_str == "swgm":
-            spec = swgm_cython_wrapper(audio_data, **kwargs)
+            spec = swgm_cython_wrapper(specs_tensor, **kwargs)
         else: # fls
-            spec = fls_cython_wrapper(audio_data, **kwargs)
+            spec = fls_cython_wrapper(specs_tensor, **kwargs)
         spec *= audio_energy/np.sum(spec, axis=None)
         return librosa.power_to_db(spec).transpose()
 
 
     def _get_cqt_spectrogram(self, audio_data):
-        # Calcula o espectrograma em dB de CQT para o arquivo de áudio.
+        # Calculate dB CQT spectrogram for audio data.
         return librosa.amplitude_to_db(np.abs(librosa.cqt(audio_data, sr=self.audio_sample_rate, 
                                 hop_length=self.cqt_hop_length, fmin=self.minimum_annotation_frequency, 
                                 n_bins=self.cqt_total_bins, bins_per_octave=self.contours_bins_per_octave, tuning=0.0)))
 
 
 
-    def serialize(self, splits=[0.8, 0.1, 0.1], split_names = ["train", "val", "test"], seed=1, source_dir="guitarset")
+    def serialize(self, splits=[0.8, 0.1, 0.1], split_names = ["train", "val", "test"], seed=1):
         """
         Generate GuitarSet dataset with specified splits and save the processed data to specified directories.
 
@@ -97,7 +97,8 @@ class GuitarsetSerializer:
         assert(len(splits) == len(split_names))
         
         # Initialize guitarset from source.
-        data = mirdata.initialize("guitarset", data_home=source_dir)
+        source_path = f"{RAW_DATASETS_BASE_PATH}/{self.source_dir_name}"
+        data = mirdata.initialize("guitarset", data_home=source_path)
 
         # Get splits using helper mirdata function.
         splits_dict = data.get_random_track_splits(splits=splits, seed=seed, split_names=split_names)
@@ -114,7 +115,7 @@ class GuitarsetSerializer:
         
         # Write metadata.
         metadata = {
-            "source_dir": self.source_dir,
+            "source_dir": self.source_dir_name,
             "num_tracks_per_record_file": self.num_tracks_per_record_file,
             "audio_sample_rate": self.audio_sample_rate,
             "audio_segment_len_frames": self.audio_segment_len_frames,
@@ -133,7 +134,7 @@ class GuitarsetSerializer:
         json.dump(metadata, open(f"{destination_base_path}/{self.destination_base_dir_name}_metadata.json", 'w'))
 
         # Process each split.
-        for name in enumerate(split_names):
+        for name in split_names:
             print(f"Processing split: \"{name}\"...")
             split_path = f"{destination_base_path}/{name}"
             os.mkdir(split_path)
@@ -296,5 +297,7 @@ class GuitarsetSerializer:
     
 
 if __name__ == "__main__":
-    serializer = GuitarsetSerializer()
-    serializer.serialize(splits=[0.9, 0.1], split_names=["training", "test"], seed=1, source_dir="guitarset", split_dirs=["dev/training", "dev/test"])
+    #serializer = GuitarsetSerializer()
+    #serializer = GuitarsetSerializer(destination_base_dir_name="fls_base", combination_method_str="fls")
+    serializer = GuitarsetSerializer(destination_base_dir_name="swgm_base", combination_method_str="swgm")
+    serializer.serialize()

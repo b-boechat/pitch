@@ -53,8 +53,6 @@ def parse_console():
     sp_train.add_argument("-o", "--output_folder", dest="output_folder_id", default=None)
     sp_train.add_argument("-y", "--save_history", dest="save_history", action="store_true")
 
-
-
     args = parser.parse_args()
     if hasattr(args, "func"):
         args.func(args)

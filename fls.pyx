@@ -11,7 +11,7 @@ IF DEBUGPRINT:
     from debug import print_arr
 
 
-def fls_cython_wrapper(X, freq_width=39, time_width=11, eta=8.0):
+def fls_cython_wrapper(X, freq_width=21, time_width=11, eta=8.0):
     return fast_local_sparsity(X, freq_width, time_width, eta)
 
 @cython.boundscheck(False)

@@ -153,5 +153,8 @@ cython_debug/
 
 dev/*
 
+processed/*
+!processed/.gitkeep
+
 fls.c
 swgm.c
