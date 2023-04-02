@@ -1,0 +1,8 @@
+Completar avaliação.
+Ajeitar serialização para ter 3 splits.
+Gerar dados para o FLS.
+
+====
+
+Preparar iteração de hiperparâmetros
+Ver o log normalization.
