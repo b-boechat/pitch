@@ -1,4 +1,4 @@
-import os # Temporário, isso vai estar no main.py
+import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 import matplotlib.pyplot as plt
@@ -16,17 +16,17 @@ def train(
     model = get_compiled_model(learning_rate = learning_rate, label_smoothing = label_smoothing, 
                                onset_positive_weight = onset_positive_weight, plot_summary = True)
 
-    train_path_list = glob.glob(f"{data_base_path}/training/" + "*.tfrecord")
+    train_path_list = glob.glob(f"{data_base_path}/train/" + "*.tfrecord")
     dataset = prepare_dataset(train_path_list, buffer_size = buffer_size, batch_size = batch_size)
 
-    val_path_list = glob.glob(f"{data_base_path}/test/" + "*.tfrecord")
+    val_path_list = glob.glob(f"{data_base_path}/val/" + "*.tfrecord")
     val_dataset = prepare_dataset(val_path_list, buffer_size = buffer_size, batch_size = batch_size)
 
     history = model.fit(
         dataset,
         epochs = epochs,
         verbose = verbose,
-        validation_data = val_dataset
+        validation_data = val_dataset,
     )
 
     print("Training dataset:")

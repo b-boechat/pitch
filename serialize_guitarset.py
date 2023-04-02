@@ -1,18 +1,23 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 import librosa
 import numpy as np
+import json
 import mirdata
+from uuid import uuid4
 from math import ceil
 from definitions import NUM_TRACKS_PER_RECORD_FILE, AUDIO_SAMPLE_RATE, AUDIO_SEGMENT_LEN_FRAMES, \
                         CQT_HOP_LENGTH, CONTOURS_TOTAL_BINS, MINIMUM_ANNOTATION_FREQUENCY, \
                         CONTOURS_BINS_PER_OCTAVE, NOTES_TOTAL_BINS, NOTES_BINS_PER_OCTAVE , \
-                        CQT_TOTAL_BINS
+                        CQT_TOTAL_BINS, PROCESSED_DATASETS_BASE_PATH
 from swgm import swgm_cython_wrapper
 from fls import fls_cython_wrapper
 
 
 class GuitarsetSerializer:
-    def __init__(self, source_dir="guitarset",
+    def __init__(self, destination_base_dir_name="test", 
+                 source_dir="guitarset",
                  num_tracks_per_record_file=NUM_TRACKS_PER_RECORD_FILE,
                  audio_sample_rate=AUDIO_SAMPLE_RATE, 
                  audio_segment_len_frames=AUDIO_SEGMENT_LEN_FRAMES, 
@@ -26,6 +31,11 @@ class GuitarsetSerializer:
                  combination_method_str=None,
                  combination_params={}
                  ) -> None:
+        """
+        destination_base_dir_name (string): Name of the base destination directory for the processed dataset. Implied path is "PROCESSED_DATASETS_BASE_PATH/destination_base_dir_name". Subdirectories for each split are automatically created.
+        Continue docstring.
+        """
+        self.destination_base_dir_name = destination_base_dir_name
         self.source_dir = source_dir
         self.num_tracks_per_record_file = num_tracks_per_record_file
         self.audio_sample_rate = audio_sample_rate
@@ -68,8 +78,7 @@ class GuitarsetSerializer:
 
 
 
-    def serialize(self, splits=[0.9, 0.1], split_names = ["training", "test"], seed=1, 
-                                source_dir="guitarset", split_dirs=["dev_guitarset_processed/training", "dev_guitarset_processed/test"]):
+    def serialize(self, splits=[0.8, 0.1, 0.1], split_names = ["train", "val", "test"], seed=1, source_dir="guitarset")
         """
         Generate GuitarSet dataset with specified splits and save the processed data to specified directories.
 
@@ -80,24 +89,55 @@ class GuitarsetSerializer:
         split_names (list): A list of names for each split, e.g. ["training", "test"].
         seed (int): Seed for generating random splits.
         source_dir (str): Path to the source directory of the GuitarSet dataset.
-        split_dirs (list): A list of directories to save the processed data for each split.
 
         Returns:
         None
         """
-        assert(len(splits) == len(split_names) and len(splits) == len(split_dirs))
+
+        assert(len(splits) == len(split_names))
         
-        # Inicializa dataset "guitarset" do diretório raiz.    
+        # Initialize guitarset from source.
         data = mirdata.initialize("guitarset", data_home=source_dir)
 
-        # Obtém splits definidos (por padrão, treinamento e teste).
+        # Get splits using helper mirdata function.
         splits_dict = data.get_random_track_splits(splits=splits, seed=seed, split_names=split_names)
         tracks = data.load_tracks()
+
+        # Create destination base directory.
+        destination_base_path = f"{PROCESSED_DATASETS_BASE_PATH}/{self.destination_base_dir_name}" 
+        if os.path.isdir(destination_base_path):
+            print(f"Destination '{destination_base_path}' exists.")
+            destination_base_path = f"{destination_base_path}-{uuid4().hex}"
+        os.mkdir(destination_base_path)
         
-        # Processa cada split.
-        for i, name in enumerate(split_names):
+        print(f"Writing to '{destination_base_path}'.")
+        
+        # Write metadata.
+        metadata = {
+            "source_dir": self.source_dir,
+            "num_tracks_per_record_file": self.num_tracks_per_record_file,
+            "audio_sample_rate": self.audio_sample_rate,
+            "audio_segment_len_frames": self.audio_segment_len_frames,
+            "cqt_hop_length": self.cqt_hop_length,
+            "cqt_total_bins": self.cqt_total_bins,
+            "contours_total_bins": self.contours_total_bins,
+            "minimum_annotation_frequency": self.minimum_annotation_frequency,
+            "contours_bins_per_octave": self.contours_bins_per_octave,
+            "notes_total_bins": self.notes_total_bins,
+            "notes_bins_per_octave": self.notes_bins_per_octave,
+            "combination_method_str": self.combination_method_str,
+            "combination_params": self.combination_params,
+            "splits": splits,
+            "split_names": split_names
+        }
+        json.dump(metadata, open(f"{destination_base_path}/{self.destination_base_dir_name}_metadata.json", 'w'))
+
+        # Process each split.
+        for name in enumerate(split_names):
             print(f"Processing split: \"{name}\"...")
-            self._process_split(tracks, splits_dict[name], split_dirs[i])
+            split_path = f"{destination_base_path}/{name}"
+            os.mkdir(split_path)
+            self._process_split(tracks, splits_dict[name], split_path)
         
         print("Done.")
         #self._process_split(tracks, split_keys_list=splits_dict["training"], splits_dir="dev_guitarset_processed/training")
