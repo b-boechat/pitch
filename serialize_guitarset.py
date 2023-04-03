@@ -3,6 +3,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 import librosa
 import numpy as np
+
 import json
 import mirdata
 from uuid import uuid4
@@ -61,11 +62,14 @@ class GuitarsetSerializer:
                                 filter_scale=scale) for scale in filter_scales])
         audio_energy = np.linalg.norm(audio_data)
         specs_tensor = np.square(np.abs(specs_tensor)).astype(np.double)
+
         specs_tensor *= audio_energy / np.linalg.norm(specs_tensor, axis=(1, 2), keepdims=True)
+
         if self.combination_method_str == "swgm":
             spec = swgm_cython_wrapper(specs_tensor, **kwargs)
         else: # fls
             spec = fls_cython_wrapper(specs_tensor, **kwargs)
+        spec = np.float32(spec)
         spec *= audio_energy/np.sum(spec, axis=None)
         return librosa.power_to_db(spec).transpose()
 
@@ -189,7 +193,7 @@ class GuitarsetSerializer:
 
         audio_data, _ = librosa.load(track.audio_mic_path, sr=self.audio_sample_rate)
         
-        # Calcula o espectrograma em dB para o arquivo de áudio. Ele tem dimensão FREQUÊNCIA X TEMPO, e pode ser uma CQT ou uma representação combinada implementada.
+        # Calcula o espectrograma em dB para o arquivo de áudio. Ele tem dimensão TEMPO X FREQUÊNCIA, e pode ser uma CQT ou uma representação combinada implementada.
         X_spec = self._get_spectrogram(audio_data, **self.combination_params)
 
         # Calcula o número de segmentos contidos no áudio. 
@@ -217,12 +221,6 @@ class GuitarsetSerializer:
         X_contours_segments = np.split(X_contours, num_segments, axis=0)
         X_notes_segments = np.split(X_notes, num_segments, axis=0)
         X_onsets_segments = np.split(X_onsets, num_segments, axis=0)
-
-        #print(f"Complete padded CQT shape: {X_spec.shape}")
-        #print(f"Spec segs shape: {np.array(X_spec_segments).shape}")
-        #print(f"Contours segs shape: {np.array(X_contours_segments).shape}")
-        #print(f"Notes segs shape: {np.array(X_notes_segments).shape}")
-        #print(f"Onsets segs shape: {np.array(X_onsets_segments).shape}")
 
         serialized_examples_list = []
 
@@ -298,6 +296,6 @@ class GuitarsetSerializer:
 
 if __name__ == "__main__":
     #serializer = GuitarsetSerializer()
-    #serializer = GuitarsetSerializer(destination_base_dir_name="fls_base", combination_method_str="fls")
-    serializer = GuitarsetSerializer(destination_base_dir_name="swgm_base", combination_method_str="swgm")
+    serializer = GuitarsetSerializer(destination_base_dir_name="fls_base", combination_method_str="fls")
+    #serializer = GuitarsetSerializer(destination_base_dir_name="swgm_base", combination_method_str="swgm")
     serializer.serialize()

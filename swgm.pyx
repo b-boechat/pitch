@@ -3,7 +3,7 @@ from scipy.stats import gmean
 cimport cython
 from libc.math cimport exp, log
 
-def swgm_wrapper(X, beta, max_gamma):
+def swgm_cython_wrapper(X, beta=0.3, max_gamma=20.0):
     return swgm(X, beta, max_gamma)
 
 @cython.boundscheck(False)
@@ -19,6 +19,8 @@ cdef swgm(double[:,:,::1] X, double beta, double max_gamma):
         Py_ssize_t p, k, m, aux_p
         double epsilon = 1e-10
 
+    print("shape", P, K, M)
+
     # Tensor pré-calculado de logaritmos.
     log_X_ndarray = np.log(np.asarray(X) + epsilon, dtype=np.double)
     cdef double[:, :, :] log_X = log_X_ndarray
@@ -28,7 +30,7 @@ cdef swgm(double[:,:,::1] X, double beta, double max_gamma):
     cdef double[:, :] sum_log_X = sum_log_X_ndarray
 
     # Tensor de pesos.
-    gammas_ndarray = np.empty((P, K, M), dtype=np.double)
+    gammas_ndarray = np.zeros((P, K, M), dtype=np.double)
     cdef double[:,:,:] gammas = gammas_ndarray
     
     # Cálculo dos pesos

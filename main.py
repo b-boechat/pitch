@@ -4,7 +4,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 from definitions import DEFAULT_BATCH, DEFAULT_ONSET_POSITIVE_WEIGHT, \
     DEFAULT_SHUFFLE_BUFFER, DEFAULT_LEARNING_RATE, DEFAULT_LABEL_SMOOTHING, \
-    GUITARSET_PROCESSED_BASE_PATH, DEFAULT_EPOCHS
+    CQT_PROCESSED_BASE_PATH, DEFAULT_EPOCHS
 from train import train
 
 def train_wrapper(args):
@@ -23,7 +23,7 @@ def train_wrapper(args):
                 epochs=args.epochs,
                 onset_positive_weight=args.onset_positive_weight,
                 verbose=args.verbosity,
-                data_base_path=args.data_base_path,
+                data_base_dir=args.data_base_dir,
                 output_folder_id=args.output_folder_id,
                 save_history=args.save_history
         )
@@ -45,7 +45,7 @@ def parse_console():
     sp_train.add_argument("-l", "--smoothing", dest="label_smoothing", type=float, metavar="LABEL_SMOOTHING", default=DEFAULT_LABEL_SMOOTHING)
     sp_train.add_argument("-w", "--weight", dest="onset_positive_weight", type=float, default=DEFAULT_ONSET_POSITIVE_WEIGHT)
 
-    sp_train.add_argument("-i", "--data_base_path", dest="data_base_path", default=GUITARSET_PROCESSED_BASE_PATH)
+    sp_train.add_argument("-i", "--data_base_dir", dest="data_base_dir", default=CQT_PROCESSED_BASE_PATH)
     #sp_train.add_argument("-n", "--no_test", dest="no_test", action="store_true")
 
     sp_train.add_argument("-v", "--verbosity", dest="verbosity", action="count", default=0)

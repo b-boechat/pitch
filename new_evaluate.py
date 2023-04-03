@@ -211,34 +211,36 @@ def _predict_on_single(model, X_spec):
     """
     return output_batch_to_single(model.predict_on_batch(np.expand_dims(X_spec, axis=0)))
 
-# TODO does not belong in this file
-def plot_learning_curves(model_history_path):
-    history_dict = json.load(open(f"{model_history_path}", 'r'))
-    plt.figure()
-    plt.plot(history_dict["loss"])
-    plt.plot(history_dict["val_loss"])
-    plt.legend(['train', 'test'], loc='upper left')
-    plt.show()
-    print(f"Training loss: {history_dict['loss'][-1]}")
-    print(f"Validation loss: {history_dict['val_loss'][-1]}")
-
-
 
 if __name__ == "__main__":
     dump = mir_evaluate_model_on_files(
-        model=restore_model_from_weights(
-            f"saved_models/history_cqt_e200.h5", label_smoothing = DEFAULT_LABEL_SMOOTHING,  
-            onset_positive_weight = DEFAULT_ONSET_POSITIVE_WEIGHT),
-            file_path=["guitarset_cqt/training/split_000.tfrecord"
-                       #"guitarset_cqt/training/split_001.tfrecord",
-                       #"guitarset_cqt/training/split_002.tfrecord",
-                       #"guitarset_cqt/training/split_003.tfrecord",
-                       #"guitarset_cqt/training/split_004.tfrecord"
-                      ],
-            onset_threshold=0.8,
+            model=restore_model_from_weights(
+                "saved_models/fls_base_model/fls_base_model.h5", 
+                label_smoothing = DEFAULT_LABEL_SMOOTHING,  
+                onset_positive_weight = DEFAULT_ONSET_POSITIVE_WEIGHT
+            ),
+            file_path=glob.glob("processed/fls_base/train/*.tfrecord"),
+            onset_threshold=0.85,
             frame_threshold=0.8
     )
-    json.dump(dump, open(f"saved_models/history_cqt_e200_predictions", 'w'))
+
+
+    json.dump(dump, open(f"saved_models/fls_base_model/fls_base_model_predictions_preview.json", 'w'
+                         ))
+    
+    dump = mir_evaluate_model_on_files(
+        model=restore_model_from_weights(
+            f"saved_models/cqt_base_model/cqt_base_model.h5", 
+            label_smoothing = DEFAULT_LABEL_SMOOTHING,  
+            onset_positive_weight = DEFAULT_ONSET_POSITIVE_WEIGHT
+        ),
+        file_path=glob.glob("processed/base/train/*.tfrecord"),
+        onset_threshold=0.85,
+        frame_threshold=0.8
+    )
+
+    json.dump(dump, open(f"saved_models/cqt_base_model/cqt_base_model_preview.json", 'w'
+                         ))
 
 
 #

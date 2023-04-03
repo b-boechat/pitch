@@ -7,19 +7,19 @@ import json
 from uuid import uuid4
 from model import get_compiled_model
 from deserialize_guitarset import prepare_dataset
-from definitions import SAVED_MODELS_BASE_PATH
+from definitions import PROCESSED_DATASETS_BASE_PATH, SAVED_MODELS_BASE_PATH
 
 def train(
         learning_rate, label_smoothing, buffer_size, batch_size, onset_positive_weight, epochs, verbose, 
-        data_base_path, output_folder_id, save_history):
+        data_base_dir, output_folder_id, save_history):
 
     model = get_compiled_model(learning_rate = learning_rate, label_smoothing = label_smoothing, 
                                onset_positive_weight = onset_positive_weight, plot_summary = True)
 
-    train_path_list = glob.glob(f"{data_base_path}/train/" + "*.tfrecord")
+    train_path_list = glob.glob(f"{PROCESSED_DATASETS_BASE_PATH}/{data_base_dir}/train/*.tfrecord")
     dataset = prepare_dataset(train_path_list, buffer_size = buffer_size, batch_size = batch_size)
 
-    val_path_list = glob.glob(f"{data_base_path}/val/" + "*.tfrecord")
+    val_path_list = glob.glob(f"{PROCESSED_DATASETS_BASE_PATH}/{data_base_dir}/val/*.tfrecord")
     val_dataset = prepare_dataset(val_path_list, buffer_size = buffer_size, batch_size = batch_size)
 
     history = model.fit(
@@ -27,6 +27,7 @@ def train(
         epochs = epochs,
         verbose = verbose,
         validation_data = val_dataset,
+        validation_steps = 5
     )
 
     print("Training dataset:")
@@ -50,7 +51,7 @@ def train(
             "batch_size": batch_size,
             "onset_positive_weight": onset_positive_weight,
             "epochs": epochs,
-            "data_base_path": data_base_path
+            "data_base_dir": data_base_dir
         }, open(f"{output_folder_path}/{output_folder_id}_meta.json", 'w'))
         if save_history:
             json.dump(history.history, open(f"{output_folder_path}/{output_folder_id}_history.json", 'w'))
@@ -58,5 +59,5 @@ def train(
 if __name__ == "__main__":
     with tf.device('/GPU:1'):
         print("Model: lr = 1e-3")
-        train(learning_rate = 0.001, label_smoothing = 0.2, onset_positive_weight = 0.95, buffer_size = 100, batch_size = 32, epochs = 50, output_folder_id = "saved_models/test", verbose=1, data_base_path="swgm")
+        train(learning_rate = 0.001, label_smoothing = 0.2, onset_positive_weight = 0.95, buffer_size = 100, batch_size = 32, epochs = 50, output_folder_id = "saved_models/test", verbose=1, data_base_dir="swgm")
 
