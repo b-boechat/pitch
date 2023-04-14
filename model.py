@@ -20,6 +20,9 @@ def define_model(plot_summary):
     # Define input shape, which is a CQT-like representation.
     inputs = tf.keras.Input(shape=(AUDIO_SEGMENT_LEN_FRAMES, CQT_TOTAL_BINS))
 
+    # Normalize dB input to [0, 1] scale.
+    x = Normalize()(inputs)
+
     # Batch norm CQT and create HCQT (non-trainable layer)
     x = tf.expand_dims(inputs, -1)
     x = keras.layers.BatchNormalization()(x)
@@ -149,6 +152,45 @@ def restore_model_from_weights(saved_model_path, learning_rate=DEFAULT_LEARNING_
     model = get_compiled_model(learning_rate=learning_rate, label_smoothing=label_smoothing, onset_positive_weight=onset_positive_weight)
     model.load_weights(saved_model_path)
     return model
+
+
+class Normalize(tf.keras.layers.Layer):
+    """
+    Takes an input with a shape of either (batch, x, y, z) or (batch, y, z)
+    and rescales each (y, z) scaled 0 - 1.
+    Only x=1 is supported.
+    Based on basic pitch NormalizeLog, removing the log conversion (input is assumed to be in log scale already)
+    """
+
+    def build(self, input_shape: tf.Tensor) -> None:
+        self.squeeze_batch = lambda batch: batch
+        rank = input_shape.rank
+        if rank == 4:
+            assert input_shape[1] == 1, "If the rank is 4, the second dimension must be length 1"
+            self.squeeze_batch = lambda batch: tf.squeeze(batch, axis=1)
+        else:
+            assert rank == 3, f"Only ranks 3 and 4 are supported!. Received rank {rank} for {input_shape}."
+
+    def call(self, inputs: tf.Tensor) -> tf.Tensor:
+        inputs = self.squeeze_batch(inputs)  # type: ignore
+
+        # Convertion to dB commented.
+
+        #power = tf.math.square(inputs)
+        #log_power = 10 * log_base_b(power + 1e-10, 10)
+
+        log_power_min = tf.reshape(tf.math.reduce_min(inputs, axis=[1, 2]), [tf.shape(inputs)[0], 1, 1])
+        log_power_offset = inputs - log_power_min
+        log_power_offset_max = tf.reshape(
+            tf.math.reduce_max(log_power_offset, axis=[1, 2]),
+            [tf.shape(inputs)[0], 1, 1],
+        )
+        log_power_normalized = tf.math.divide_no_nan(log_power_offset, log_power_offset_max)
+
+        return tf.reshape(log_power_normalized, tf.shape(inputs))
+
+
+
 
 if __name__ == "__main__":
     define_model(plot_summary=True)
