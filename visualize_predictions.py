@@ -15,6 +15,7 @@ def visualize_predictions(saved_model_path, data_path_list):
                                        onset_positive_weight = DEFAULT_ONSET_POSITIVE_WEIGHT)
 
     dataset = fetch_dataset(data_path_list)
+
     for example in dataset:
         id, X_spec, X_contours, X_notes, X_onsets = example
 
@@ -22,9 +23,6 @@ def visualize_predictions(saved_model_path, data_path_list):
                 model.predict_on_batch(
                     zipped_single_to_batch( 
                         zip_for_model(*example))))
-
-        #print(X_contours, end="\n\n\n")
-        #print(pred)
 
         plt.figure()
         specshow(X_spec.numpy().transpose(), sr=AUDIO_SAMPLE_RATE, x_axis='time', y_axis='cqt_hz',
@@ -54,11 +52,12 @@ def visualize_predictions(saved_model_path, data_path_list):
         print(f"Id: {id}")
         #plt.get_current_fig_manager().full_screen_toggle()
         plt.show()
-        input(".")
+        if input(".") == "x":
+            exit()
 
 
 if __name__ == "__main__":
-    visualize_predictions("saved_models/trained_lr_e3.h5", glob.glob(r"guitarset_processed/training/" + r"/*.tfrecord"))
+    visualize_predictions("saved_models/cqt_base_mode/cqt_base_model.h5", glob.glob(r"guitarset_processed/training/" + r"/*.tfrecord"))
     
                         
     
