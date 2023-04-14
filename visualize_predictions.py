@@ -58,7 +58,7 @@ def visualize_predictions(saved_model_path, data_path_list):
 
 
 if __name__ == "__main__":
-    visualize_predictions("saved_models/trained_lr_e3.h5", glob.glob(r"guitarset_processed/training/" + r"/*.tfrecord"))
+    visualize_predictions("saved_models/history_swgm_e200.h5", glob.glob(r"guitarset_swgm/training" + r"/*.tfrecord"))
     
                         
     
