@@ -156,5 +156,7 @@ dev/*
 processed/*
 !processed/.gitkeep
 
+saved_models/*/*eval*.json
+
 fls.c
 swgm.c

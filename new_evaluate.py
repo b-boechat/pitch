@@ -3,7 +3,6 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 import re
 import numpy as np
-import matplotlib.pyplot as plt
 import json
 import mir_eval
 from librosa import midi_to_hz
@@ -11,9 +10,43 @@ from model import restore_model_from_weights
 from note_creation import model_output_to_notes
 from deserialize_guitarset import fetch_dataset, output_batch_to_single
 import glob
-from definitions import DEFAULT_LABEL_SMOOTHING, DEFAULT_ONSET_POSITIVE_WEIGHT
+from uuid import uuid4
+from definitions import DEFAULT_LABEL_SMOOTHING, DEFAULT_ONSET_POSITIVE_WEIGHT, SAVED_MODELS_BASE_PATH, PROCESSED_DATASETS_BASE_PATH
 
-def mir_evaluate_model_on_files(model, file_path, onset_threshold, frame_threshold, mode="return"):
+def mir_evaluate_and_save(model_id, split_name, onset_threshold, frame_threshold, verbose=True):
+    model, ds_files = get_model_and_ds_files(model_id, split_name)
+
+    metrics_meta = [{"split_name": split_name, "onset_threshold": onset_threshold, "frame_threshold": frame_threshold}]
+    output_path = f"{SAVED_MODELS_BASE_PATH}/{model_id}/{model_id}_eval_{split_name}_{int(onset_threshold*100)}_{int(frame_threshold*100)}.json"
+    if os.path.exists(output_path):
+        output_path = f"{SAVED_MODELS_BASE_PATH}/{model_id}/{model_id}_eval_{split_name}_{int(onset_threshold*100)}_{int(frame_threshold*100)}-{uuid4().hex}.json"
+
+    if verbose:
+        print(metrics_meta)
+
+    metrics_list = mir_evaluate_model_on_files(model, ds_files, onset_threshold, frame_threshold)
+
+    if verbose:
+        print(f"Writing to {output_path}", end="\n\n")
+    json.dump(metrics_meta + metrics_list, open(output_path, 'w'))
+    
+
+
+
+def get_model_and_ds_files(model_id, split_name):
+    model_folder = f"{SAVED_MODELS_BASE_PATH}/{model_id}"
+    model = restore_model_from_weights(
+            f"{model_folder}/{model_id}.h5", 
+            label_smoothing = DEFAULT_LABEL_SMOOTHING,  
+            onset_positive_weight = DEFAULT_ONSET_POSITIVE_WEIGHT
+        )
+    meta = json.load(open(f"{model_folder}/{model_id}_meta.json", 'r'))
+    ds_path = f"{PROCESSED_DATASETS_BASE_PATH}/{meta['data_base_dir']}/{split_name}"
+    ds_files = glob.glob(f"{ds_path}/*.tfrecord")
+
+    return model, ds_files
+
+def mir_evaluate_model_on_files(model, file_path, onset_threshold, frame_threshold, mode="return", verbose=True):
     """
     Evaluates MIR metrics for the model on
       the audio files specified in the file path.
@@ -53,6 +86,9 @@ def mir_evaluate_model_on_files(model, file_path, onset_threshold, frame_thresho
             # If new audio is not the first, process the previous one, now that its posteriograms are complete:
             if full_audio_id is not None:
                 # Evaluate MIR metrics using the target and predicted posteriorgrams.
+                if verbose:
+                    print(f"Evaluating '{full_audio_id}.'")
+
                 metrics = _evaluate_audio(
                             full_audio_target_dict, full_audio_predicted_dict,
                             onset_threshold, frame_threshold
@@ -80,6 +116,8 @@ def mir_evaluate_model_on_files(model, file_path, onset_threshold, frame_thresho
     if mode == "return":
         return metrics_container
     return None
+
+
 
 def _convert_to_mir_eval_format(note_creation_output):
     """
@@ -213,52 +251,6 @@ def _predict_on_single(model, X_spec):
 
 
 if __name__ == "__main__":
-    dump = mir_evaluate_model_on_files(
-            model=restore_model_from_weights(
-                "saved_models/fls_base_model/fls_base_model.h5", 
-                label_smoothing = DEFAULT_LABEL_SMOOTHING,  
-                onset_positive_weight = DEFAULT_ONSET_POSITIVE_WEIGHT
-            ),
-            file_path=glob.glob("processed/fls_base/train/*.tfrecord"),
-            onset_threshold=0.85,
-            frame_threshold=0.8
-    )
-
-
-    json.dump(dump, open(f"saved_models/fls_base_model/fls_base_model_predictions_preview.json", 'w'
-                         ))
-    
-    dump = mir_evaluate_model_on_files(
-        model=restore_model_from_weights(
-            f"saved_models/cqt_base_model/cqt_base_model.h5", 
-            label_smoothing = DEFAULT_LABEL_SMOOTHING,  
-            onset_positive_weight = DEFAULT_ONSET_POSITIVE_WEIGHT
-        ),
-        file_path=glob.glob("processed/base/train/*.tfrecord"),
-        onset_threshold=0.85,
-        frame_threshold=0.8
-    )
-
-    json.dump(dump, open(f"saved_models/cqt_base_model/cqt_base_model_preview.json", 'w'
-                         ))
-
-
-#
-#
-#
-#
-# def evaluate_modeeel(model_path, data_base_path, verbose):
-#     model = restore_model_from_weights(f"{model_path}.h5", learning_rate = DEFAULT_LEARNING_RATE, label_smoothing = DEFAULT_LABEL_SMOOTHING,  
-#                                        onset_positive_weight = DEFAULT_ONSET_POSITIVE_WEIGHT)
-
-#     train_path_list = glob.glob(f"{data_base_path}/training/" + "*.tfrecord")
-#     dataset = prepare_dataset(train_path_list, buffer_size = DEFAULT_SHUFFLE_BUFFER, batch_size = DEFAULT_BATCH)
-
-#     val_path_list = glob.glob(f"{data_base_path}/test/" + "*.tfrecord")
-#     val_dataset = prepare_dataset(val_path_list, buffer_size = DEFAULT_SHUFFLE_BUFFER, batch_size = DEFAULT_BATCH)
-
-#     print("Training dataset loss function:")
-#     model.evaluate(dataset, verbose = verbose)
-#     print("Validation dataset loss function:")
-#     model.evaluate(val_dataset, verbose = verbose)
-
+    for onset_threshold in [0.7, 0.8, 0.9]:
+        for frame_threshold in [0.5, 0.6, 0.7, 0.8]:
+            mir_evaluate_and_save("swgm_normalize_model", "val", onset_threshold=onset_threshold, frame_threshold=frame_threshold)

@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.stats import gmean
 cimport cython
 from libc.math cimport exp, log
 
@@ -18,8 +17,6 @@ cdef swgm(double[:,:,::1] X, double beta, double max_gamma):
 
         Py_ssize_t p, k, m, aux_p
         double epsilon = 1e-10
-
-    print("shape", P, K, M)
 
     # Tensor pré-calculado de logaritmos.
     log_X_ndarray = np.log(np.asarray(X) + epsilon, dtype=np.double)
@@ -43,4 +40,4 @@ cdef swgm(double[:,:,::1] X, double beta, double max_gamma):
                     gammas[p, k, m] = max_gamma
 
     # Cálculo das médias geométricas ponderadas.
-    return gmean(X, axis=0, weights=gammas_ndarray)
+    return np.exp(np.average(log_X_ndarray, axis=0, weights=gammas_ndarray))
