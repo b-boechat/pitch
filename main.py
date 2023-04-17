@@ -6,6 +6,7 @@ from definitions import DEFAULT_BATCH, DEFAULT_ONSET_POSITIVE_WEIGHT, \
     DEFAULT_SHUFFLE_BUFFER, DEFAULT_LEARNING_RATE, DEFAULT_LABEL_SMOOTHING, \
     CQT_PROCESSED_BASE_PATH, DEFAULT_EPOCHS
 from train import train
+from read_evaluation import read_metrics
 
 def train_wrapper(args):
     if args.verbosity > 2:
@@ -27,6 +28,9 @@ def train_wrapper(args):
                 output_folder_id=args.output_folder_id,
                 save_history=args.save_history
         )
+
+def read_metrics_wrapper(args): # TODO add other arguments
+    read_metrics(args.model_id)
 
 def parse_console():
     parser = ap.ArgumentParser(description="Interface para treinamento e avaliação do sistema de detecção de frequência fundamental baseado no \"basic pitch\"")
@@ -52,6 +56,11 @@ def parse_console():
 
     sp_train.add_argument("-o", "--output_folder", dest="output_folder_id", default=None)
     sp_train.add_argument("-y", "--save_history", dest="save_history", action="store_true")
+
+
+    sp_read_eval = subparsers.add_parser("read_eval", aliases="r")
+    sp_read_eval.set_defaults(func=read_metrics_wrapper)
+    sp_read_eval.add_argument("model_id")
 
     args = parser.parse_args()
     if hasattr(args, "func"):
