@@ -29,9 +29,6 @@ def mir_evaluate_and_save(model_id, split_name, onset_threshold, frame_threshold
     if verbose:
         print(f"Writing to {output_path}", end="\n\n")
     json.dump(metrics_meta + metrics_list, open(output_path, 'w'))
-    
-
-
 
 def get_model_and_ds_files(model_id, split_name):
     model_folder = f"{SAVED_MODELS_BASE_PATH}/{model_id}"
@@ -251,6 +248,6 @@ def _predict_on_single(model, X_spec):
 
 
 if __name__ == "__main__":
-    for onset_threshold in [0.7, 0.8, 0.9]:
-        for frame_threshold in [0.5, 0.6, 0.7, 0.8]:
-            mir_evaluate_and_save("swgm_normalize_model", "val", onset_threshold=onset_threshold, frame_threshold=frame_threshold)
+    for onset_threshold in [0.8, 0.9]:
+        for frame_threshold in [0.5, 0.6, 0.7, 0.8, 0.9]:
+            mir_evaluate_and_save("swgm_model", "val", onset_threshold=onset_threshold, frame_threshold=frame_threshold)
