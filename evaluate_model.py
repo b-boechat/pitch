@@ -83,14 +83,15 @@ def mir_evaluate_model_on_files(model, file_path, onset_threshold, frame_thresho
             # If new audio is not the first, process the previous one, now that its posteriograms are complete:
             if full_audio_id is not None:
                 # Evaluate MIR metrics using the target and predicted posteriorgrams.
-                if verbose:
-                    print(f"Evaluating '{full_audio_id}.'")
 
                 metrics = _evaluate_audio(
                             full_audio_target_dict, full_audio_predicted_dict,
                             onset_threshold, frame_threshold
                         )   
                 # Print or store metrics, depending on the operation mode.
+                if verbose:
+                    print(f"FScore for '{full_audio_id}.': {metrics['F-measure_no_offset']}")
+                
                 if mode == "print":
                     print(f"{full_audio_id}:")
                     print(metrics, end="\n\n")
@@ -248,6 +249,6 @@ def _predict_on_single(model, X_spec):
 
 
 if __name__ == "__main__":
-    for onset_threshold in [0.8, 0.9]:
-        for frame_threshold in [0.5, 0.6, 0.7, 0.8, 0.9]:
-            mir_evaluate_and_save("swgm_model", "val", onset_threshold=onset_threshold, frame_threshold=frame_threshold)
+    for onset_threshold in [0.9, 0.8]:
+        for frame_threshold in [0.9, 0.8, 0.7, 0.6, 0.5]:
+            mir_evaluate_and_save("fls_normalize_model", "val", onset_threshold=onset_threshold, frame_threshold=frame_threshold)

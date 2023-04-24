@@ -55,7 +55,7 @@ def parse_console():
     sp_train.add_argument("-v", "--verbosity", dest="verbosity", action="count", default=0)
 
     sp_train.add_argument("-o", "--output_folder", dest="output_folder_id", default=None)
-    sp_train.add_argument("-y", "--save_history", dest="save_history", action="store_true")
+    sp_train.add_argument("-y", "--dont_save_history", dest="save_history", action="store_false")
 
 
     sp_read_eval = subparsers.add_parser("read_eval", aliases="r")

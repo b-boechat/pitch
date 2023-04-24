@@ -10,7 +10,7 @@ def read_metrics(model_id, keys="all", split_name="val"):
     best_f_measure = -1.0
     best_onset_threshold, best_frame_threshold = -1., -1.
 
-    for path in glob(f"{model_folder}/{model_id}_eval_{split_name}*.json"):
+    for path in sorted(glob(f"{model_folder}/{model_id}_eval_{split_name}*.json")):
         dump = json.load(open(path, 'r'))
         meta = dump[0]
         records = dump[1:]
@@ -28,7 +28,7 @@ def read_metrics(model_id, keys="all", split_name="val"):
                 best_f_measure = key_mean
                 best_onset_threshold, best_frame_threshold = meta['onset_threshold'], meta['frame_threshold']
             print(f"{key}, mean: {key_mean}, std: {key_std}")
-        print(end="\n\n\n")
+        print(end="\n\n")
     print(f"Best thresholds: ({best_onset_threshold}, {best_frame_threshold}). F_measure: {best_f_measure}")
 
 
