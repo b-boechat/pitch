@@ -12,6 +12,11 @@ from deserialize_guitarset import fetch_dataset, output_batch_to_single
 import glob
 from uuid import uuid4
 from definitions import DEFAULT_LABEL_SMOOTHING, DEFAULT_ONSET_POSITIVE_WEIGHT, SAVED_MODELS_BASE_PATH, PROCESSED_DATASETS_BASE_PATH
+from definitions import * # Temp.
+
+from librosa.display import specshow
+import matplotlib.pyplot as plt
+
 
 def mir_evaluate_and_save(model_id, split_name, onset_threshold, frame_threshold, verbose=True):
     model, ds_files = get_model_and_ds_files(model_id, split_name)
@@ -30,7 +35,7 @@ def mir_evaluate_and_save(model_id, split_name, onset_threshold, frame_threshold
         print(f"Writing to {output_path}", end="\n\n")
     json.dump(metrics_meta + metrics_list, open(output_path, 'w'))
 
-def get_model_and_ds_files(model_id, split_name):
+def get_model_and_ds_files(model_id, split_name, verbose=True):
     model_folder = f"{SAVED_MODELS_BASE_PATH}/{model_id}"
     model = restore_model_from_weights(
             f"{model_folder}/{model_id}.h5", 
@@ -38,6 +43,8 @@ def get_model_and_ds_files(model_id, split_name):
             onset_positive_weight = DEFAULT_ONSET_POSITIVE_WEIGHT
         )
     meta = json.load(open(f"{model_folder}/{model_id}_meta.json", 'r'))
+    if verbose:
+        print(meta)
     ds_path = f"{PROCESSED_DATASETS_BASE_PATH}/{meta['data_base_dir']}/{split_name}"
     ds_files = glob.glob(f"{ds_path}/*.tfrecord")
 
@@ -204,6 +211,20 @@ def _evaluate_audio(target_dict, predicted_dict, onset_threshold, frame_threshol
                             create_midi=False
                         ))
 
+    
+    #specshow(target_dict["X_notes"].numpy().transpose(), sr=AUDIO_SAMPLE_RATE, x_axis='time', y_axis='cqt_hz',
+                 hop_length=CQT_HOP_LENGTH, fmin=MINIMUM_ANNOTATION_FREQUENCY, tuning=0.0,bins_per_octave=NOTES_BINS_PER_OCTAVE,
+                 )
+    
+    #plt.figure()
+    #specshow(predicted_dict["X_notes"].numpy().transpose(), sr=AUDIO_SAMPLE_RATE, x_axis='time', y_axis='cqt_hz',
+                 hop_length=CQT_HOP_LENGTH, fmin=MINIMUM_ANNOTATION_FREQUENCY, tuning=0.0,bins_per_octave=NOTES_BINS_PER_OCTAVE,
+                 )
+    #plt.show()
+    #print(f"target_pitches: {target_pitches}")
+    #print(f"predicted_pitches: {predicted_pitches}")
+
+
     return mir_eval.transcription.evaluate(
             target_intervals, target_pitches, predicted_intervals, predicted_pitches, offset_ratio=None)
 
@@ -249,6 +270,7 @@ def _predict_on_single(model, X_spec):
 
 
 if __name__ == "__main__":
-    for onset_threshold in [0.9, 0.8]:
-        for frame_threshold in [0.9, 0.8, 0.7, 0.6, 0.5]:
-            mir_evaluate_and_save("fls_normalize_model", "val", onset_threshold=onset_threshold, frame_threshold=frame_threshold)
+    for onset_threshold in [0.7, 0.8, 0.9]:
+        for frame_threshold in [0.5, 0.6, 0.7, 0.8, 0.9]:
+            mir_evaluate_and_save("cqt_e6", "val", onset_threshold=onset_threshold, frame_threshold=frame_threshold)
+            #mir_evaluate_and_save("fls_normalize_model", "val", onset_threshold=onset_threshold, frame_threshold=frame_threshold)

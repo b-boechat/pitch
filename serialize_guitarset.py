@@ -297,5 +297,6 @@ class GuitarsetSerializer:
 if __name__ == "__main__":
     #serializer = GuitarsetSerializer()
     #serializer = GuitarsetSerializer(destination_base_dir_name="fls_base", combination_method_str="fls")
-    serializer = GuitarsetSerializer(destination_base_dir_name="swgm_base", combination_method_str="swgm")
+    serializer = GuitarsetSerializer(destination_base_dir_name="fls_fw11", combination_method_str="fls", combination_params={'freq_width': 11})
+    #serializer = GuitarsetSerializer(destination_base_dir_name="swgm_base", combination_method_str="swgm")
     serializer.serialize()
