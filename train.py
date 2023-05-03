@@ -57,7 +57,7 @@ def train(
             json.dump(history.history, open(f"{output_folder_path}/{output_folder_id}_history.json", 'w'))
 
 if __name__ == "__main__":
-    with tf.device('/GPU:0'):
+    with tf.device('/GPU:1'):
         print("Model: lr = 1e-3")
         train(learning_rate = 0.001, label_smoothing = 0.2, onset_positive_weight = 0.95, buffer_size = 100, batch_size = 32, epochs = 50, output_folder_id = "saved_models/test", verbose=1, data_base_dir="swgm")
 

@@ -16,7 +16,7 @@ def train_wrapper(args):
 
     print(args)
 
-    with tf.device('/GPU:1'):
+    with tf.device(f'/GPU:{args.gpu}'):
         train(learning_rate=args.learning_rate,
                 label_smoothing=args.label_smoothing,
                 buffer_size=args.shuffle_buffer,
@@ -56,6 +56,8 @@ def parse_console():
 
     sp_train.add_argument("-o", "--output_folder", dest="output_folder_id", default=None)
     sp_train.add_argument("-y", "--dont_save_history", dest="save_history", action="store_false")
+
+    sp_train.add_argument("-g", "--gpu", dest="gpu", default=1)
 
 
     sp_read_eval = subparsers.add_parser("read_eval", aliases="r")

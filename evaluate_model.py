@@ -213,13 +213,13 @@ def _evaluate_audio(target_dict, predicted_dict, onset_threshold, frame_threshol
 
     
     #specshow(target_dict["X_notes"].numpy().transpose(), sr=AUDIO_SAMPLE_RATE, x_axis='time', y_axis='cqt_hz',
-                 hop_length=CQT_HOP_LENGTH, fmin=MINIMUM_ANNOTATION_FREQUENCY, tuning=0.0,bins_per_octave=NOTES_BINS_PER_OCTAVE,
-                 )
+    #             hop_length=CQT_HOP_LENGTH, fmin=MINIMUM_ANNOTATION_FREQUENCY, tuning=0.0,bins_per_octave=NOTES_BINS_PER_OCTAVE,
+    #             )
     
     #plt.figure()
     #specshow(predicted_dict["X_notes"].numpy().transpose(), sr=AUDIO_SAMPLE_RATE, x_axis='time', y_axis='cqt_hz',
-                 hop_length=CQT_HOP_LENGTH, fmin=MINIMUM_ANNOTATION_FREQUENCY, tuning=0.0,bins_per_octave=NOTES_BINS_PER_OCTAVE,
-                 )
+    #             hop_length=CQT_HOP_LENGTH, fmin=MINIMUM_ANNOTATION_FREQUENCY, tuning=0.0,bins_per_octave=NOTES_BINS_PER_OCTAVE,
+    #             )
     #plt.show()
     #print(f"target_pitches: {target_pitches}")
     #print(f"predicted_pitches: {predicted_pitches}")
@@ -270,7 +270,6 @@ def _predict_on_single(model, X_spec):
 
 
 if __name__ == "__main__":
-    for onset_threshold in [0.7, 0.8, 0.9]:
-        for frame_threshold in [0.5, 0.6, 0.7, 0.8, 0.9]:
-            mir_evaluate_and_save("cqt_e6", "val", onset_threshold=onset_threshold, frame_threshold=frame_threshold)
-            #mir_evaluate_and_save("fls_normalize_model", "val", onset_threshold=onset_threshold, frame_threshold=frame_threshold)
+    for onset_threshold in [0.9, 0.8]:
+        for frame_threshold in [0.6, 0.7, 0.8, 0.9]:
+            mir_evaluate_and_save("fls_fw11_new", "val", onset_threshold=onset_threshold, frame_threshold=frame_threshold)
