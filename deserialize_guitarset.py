@@ -15,7 +15,7 @@ def prepare_dataset(filenames, buffer_size, batch_size, num_parallel_reads=None)
     dataset = dataset.shuffle(buffer_size)
     dataset = dataset.map(_deserialize_example)
     dataset = dataset.map(zip_for_model)
-    dataset = dataset.batch(batch_size, drop_remainder=True)#.prefetch(tf.data.AUTOTUNE)
+    dataset = dataset.batch(batch_size, drop_remainder=True).prefetch(batch_size)
     return dataset
 
 def fetch_dataset(filenames, num_parallel_reads=None):

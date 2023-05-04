@@ -26,7 +26,7 @@ def train(
         dataset,
         epochs = epochs,
         verbose = verbose,
-        validation_data = val_dataset,
+        validation_data = val_dataset.take(batch_size//4),
         validation_steps = 5
     )
 
