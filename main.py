@@ -30,7 +30,7 @@ def train_wrapper(args):
         )
 
 def read_metrics_wrapper(args): # TODO add other arguments
-    read_metrics(args.model_id)
+    read_metrics(args.model_id, split_name=args.split_name)
 
 def parse_console():
     parser = ap.ArgumentParser(description="Interface para treinamento e avaliação do sistema de detecção de frequência fundamental baseado no \"basic pitch\"")
@@ -63,6 +63,7 @@ def parse_console():
     sp_read_eval = subparsers.add_parser("read_eval", aliases="r")
     sp_read_eval.set_defaults(func=read_metrics_wrapper)
     sp_read_eval.add_argument("model_id")
+    sp_read_eval.add_argument("-s", "--split", dest="split_name", default="val")
 
     args = parser.parse_args()
     if hasattr(args, "func"):

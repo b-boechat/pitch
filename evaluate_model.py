@@ -270,6 +270,20 @@ def _predict_on_single(model, X_spec):
 
 
 if __name__ == "__main__":
-    for onset_threshold in [0.9, 0.8]:
-        for frame_threshold in [0.6, 0.7, 0.8, 0.9]:
-            mir_evaluate_and_save("fls_fw11_new", "val", onset_threshold=onset_threshold, frame_threshold=frame_threshold)
+
+    with tf.device(f'/GPU:1'):
+        model_id, onset_threshold, frame_threshold = "swgm_lr_e4_epoch_250_run2", 0.9, 0.8
+        mir_evaluate_and_save(model_id, "test", onset_threshold=onset_threshold, frame_threshold=frame_threshold)
+
+        model_id, onset_threshold, frame_threshold = "swgm_lr_e4_epoch_250_run3", 0.9, 0.7
+        mir_evaluate_and_save(model_id, "test", onset_threshold=onset_threshold, frame_threshold=frame_threshold)
+
+        # FLS
+        model_id, onset_threshold, frame_threshold = "fls_fw11_new", 0.9, 0.8
+        mir_evaluate_and_save(model_id, "test", onset_threshold=onset_threshold, frame_threshold=frame_threshold)
+
+        model_id, onset_threshold, frame_threshold = "fls_lr_e4_fw11_epoch_250_run2", 0.9, 0.7
+        mir_evaluate_and_save(model_id, "test", onset_threshold=onset_threshold, frame_threshold=frame_threshold)
+
+        model_id, onset_threshold, frame_threshold = "fls_lr_e4_fw11_epoch_250_run3", 0.9, 0.7
+        mir_evaluate_and_save(model_id, "test", onset_threshold=onset_threshold, frame_threshold=frame_threshold)

@@ -3,7 +3,7 @@ import json
 from glob import glob
 from definitions import SAVED_MODELS_BASE_PATH
 
-def read_metrics(model_id, keys="all", split_name="val"):
+def read_metrics(model_id, split_name="val", keys="all"):
     assert split_name in ("train", "val", "test")
 
     model_folder = f"{SAVED_MODELS_BASE_PATH}/{model_id}"
