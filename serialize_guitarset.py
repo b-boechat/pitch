@@ -8,7 +8,7 @@ import json
 import mirdata
 from uuid import uuid4
 from math import ceil
-from definitions import NUM_TRACKS_PER_RECORD_FILE, AUDIO_SAMPLE_RATE, AUDIO_SEGMENT_LEN_FRAMES, \
+from definitions import NUM_TRACKS_PER_RECORD_FILE, AUDIO_SAMPLE_RATE, AUDIO_SEGMENT_LEN_FRAMES, AUDIO_SEGMENT_LEN_SECS, \
                         CQT_HOP_LENGTH, CONTOURS_TOTAL_BINS, MINIMUM_ANNOTATION_FREQUENCY, \
                         CONTOURS_BINS_PER_OCTAVE, NOTES_TOTAL_BINS, NOTES_BINS_PER_OCTAVE , \
                         CQT_TOTAL_BINS, RAW_DATASETS_BASE_PATH, PROCESSED_DATASETS_BASE_PATH
@@ -281,6 +281,32 @@ class GuitarsetSerializer:
         example = tf.train.Example(features=tf.train.Features(feature=feature_dict))
         return example.SerializeToString()
 
+    def show_size_information(self, splits=[0.8, 0.1, 0.1], split_names = ["train", "val", "test"], seed=1):
+        # Initialize guitarset from source.
+        source_path = f"{RAW_DATASETS_BASE_PATH}/{self.source_dir_name}"
+        data = mirdata.initialize("guitarset", data_home=source_path)
+
+        # Get splits using helper mirdata function.
+        splits_dict = data.get_random_track_splits(splits=splits, seed=seed, split_names=split_names)
+        tracks = data.load_tracks()
+
+        # TODO change this if overlap is included.
+        total_dataset_duration = 0.0
+        for split, track_keys in splits_dict.items():
+            total_split_duration = 0.0
+            total_segs = 0
+            for key in track_keys:
+                duration = librosa.get_duration(filename=tracks[key].audio_mic_path)
+                segs = ceil(duration / AUDIO_SEGMENT_LEN_SECS)
+                total_split_duration += duration
+                total_segs += segs
+            total_dataset_duration += total_split_duration
+            print(f"Split: {split} \nFiles = {len(track_keys)}\nDuration = {total_split_duration//60} min {total_split_duration%60} s\nSegs = {total_segs}", end="\n\n")
+        print(f"Total duration: {total_dataset_duration//60} min {total_dataset_duration%60} s")
+
+
+
+
     # Funções obtidas do tutorial do Tensorflow de TFRecord.
     @staticmethod
     def _bytes_feature(value):
@@ -297,6 +323,7 @@ class GuitarsetSerializer:
 if __name__ == "__main__":
     #serializer = GuitarsetSerializer()
     #serializer = GuitarsetSerializer(destination_base_dir_name="fls_base", combination_method_str="fls")
-    serializer = GuitarsetSerializer(destination_base_dir_name="fls_fw11", combination_method_str="fls", combination_params={'freq_width': 11})
+    #serializer = GuitarsetSerializer(destination_base_dir_name="fls_fw11", combination_method_str="fls", combination_params={'freq_width': 11})
     #serializer = GuitarsetSerializer(destination_base_dir_name="swgm_base", combination_method_str="swgm")
-    serializer.serialize()
+    serializer = GuitarsetSerializer(destination_base_dir_name="lalala")
+    serializer.show_size_information()

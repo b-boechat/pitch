@@ -29,7 +29,7 @@ def read_metrics(model_id, split_name="val", keys="all"):
                 best_onset_threshold, best_frame_threshold = meta['onset_threshold'], meta['frame_threshold']
             print(f"{key}, mean: {key_mean}, std: {key_std}")
         print(end="\n\n")
-    print(f"Best thresholds: ({best_onset_threshold}, {best_frame_threshold}). F_measure: {best_f_measure}")
+    print(f"Best thresholds: ({best_onset_threshold}, {best_frame_threshold}). F_measure: {100*best_f_measure}%")
 
 
 if __name__ == "__main__":
