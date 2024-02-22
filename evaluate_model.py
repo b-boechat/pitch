@@ -18,24 +18,24 @@ from librosa.display import specshow
 import matplotlib.pyplot as plt
 
 
-def mir_evaluate_and_save(model_id, split_name, onset_threshold, frame_threshold, verbose=True):
-    model, ds_files = get_model_and_ds_files(model_id, split_name)
+def evaluate_model(model_id, split_name, onset_threshold, frame_threshold, verbosity):
+    model, ds_files = get_model_and_ds_files(model_id, split_name, verbosity=verbosity)
 
     metrics_meta = [{"split_name": split_name, "onset_threshold": onset_threshold, "frame_threshold": frame_threshold}]
     output_path = f"{SAVED_MODELS_BASE_PATH}/{model_id}/{model_id}_eval_{split_name}_{int(onset_threshold*100)}_{int(frame_threshold*100)}.json"
     if os.path.exists(output_path):
         output_path = f"{SAVED_MODELS_BASE_PATH}/{model_id}/{model_id}_eval_{split_name}_{int(onset_threshold*100)}_{int(frame_threshold*100)}-{uuid4().hex}.json"
 
-    if verbose:
+    if verbosity >= 1:
         print(metrics_meta)
 
-    metrics_list = mir_evaluate_model_on_files(model, ds_files, onset_threshold, frame_threshold)
+    metrics_list = mir_evaluate_model_on_files(model, ds_files, onset_threshold, frame_threshold, verbosity=verbosity)
 
-    if verbose:
+    if verbosity >= 1:
         print(f"Writing to {output_path}", end="\n\n")
     json.dump(metrics_meta + metrics_list, open(output_path, 'w'))
 
-def get_model_and_ds_files(model_id, split_name, verbose=True):
+def get_model_and_ds_files(model_id, split_name, verbosity=1):
     model_folder = f"{SAVED_MODELS_BASE_PATH}/{model_id}"
     model = restore_model_from_weights(
             f"{model_folder}/{model_id}.h5", 
@@ -43,14 +43,14 @@ def get_model_and_ds_files(model_id, split_name, verbose=True):
             onset_positive_weight = DEFAULT_ONSET_POSITIVE_WEIGHT
         )
     meta = json.load(open(f"{model_folder}/{model_id}_meta.json", 'r'))
-    if verbose:
+    if verbosity >= 2:
         print(meta)
     ds_path = f"{PROCESSED_DATASETS_BASE_PATH}/{meta['data_base_dir']}/{split_name}"
     ds_files = glob.glob(f"{ds_path}/*.tfrecord")
 
     return model, ds_files
 
-def mir_evaluate_model_on_files(model, file_path, onset_threshold, frame_threshold, mode="return", verbose=True):
+def mir_evaluate_model_on_files(model, file_path, onset_threshold, frame_threshold, mode="return", verbosity=1):
     """
     Evaluates MIR metrics for the model on
       the audio files specified in the file path.
@@ -96,7 +96,7 @@ def mir_evaluate_model_on_files(model, file_path, onset_threshold, frame_thresho
                             onset_threshold, frame_threshold
                         )   
                 # Print or store metrics, depending on the operation mode.
-                if verbose:
+                if verbosity >= 1:
                     print(f"FScore for '{full_audio_id}.': {metrics['F-measure_no_offset']}")
                 
                 if mode == "print":
@@ -269,21 +269,4 @@ def _predict_on_single(model, X_spec):
     return output_batch_to_single(model.predict_on_batch(np.expand_dims(X_spec, axis=0)))
 
 
-if __name__ == "__main__":
-
-    with tf.device(f'/GPU:1'):
-        model_id, onset_threshold, frame_threshold = "swgm_lr_e4_epoch_250_run2", 0.9, 0.8
-        mir_evaluate_and_save(model_id, "test", onset_threshold=onset_threshold, frame_threshold=frame_threshold)
-
-        model_id, onset_threshold, frame_threshold = "swgm_lr_e4_epoch_250_run3", 0.9, 0.7
-        mir_evaluate_and_save(model_id, "test", onset_threshold=onset_threshold, frame_threshold=frame_threshold)
-
-        # FLS
-        model_id, onset_threshold, frame_threshold = "fls_fw11_new", 0.9, 0.8
-        mir_evaluate_and_save(model_id, "test", onset_threshold=onset_threshold, frame_threshold=frame_threshold)
-
-        model_id, onset_threshold, frame_threshold = "fls_lr_e4_fw11_epoch_250_run2", 0.9, 0.7
-        mir_evaluate_and_save(model_id, "test", onset_threshold=onset_threshold, frame_threshold=frame_threshold)
-
-        model_id, onset_threshold, frame_threshold = "fls_lr_e4_fw11_epoch_250_run3", 0.9, 0.7
-        mir_evaluate_and_save(model_id, "test", onset_threshold=onset_threshold, frame_threshold=frame_threshold)
+#if __name__ == "__main__":
