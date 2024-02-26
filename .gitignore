@@ -156,7 +156,6 @@ dev/*
 processed/*
 !processed/.gitkeep
 
-#saved_models/*/*eval*.json
 #saved_models/*
 #!saved_models/.gitkeep
 
