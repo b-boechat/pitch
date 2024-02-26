@@ -13,6 +13,8 @@ def train_wrapper(args):
     if args.verbosity >= 1:
         print(args)
 
+    print(args.gpu)
+
     with tf.device(f'/GPU:{args.gpu}'):
         train(learning_rate=args.learning_rate,
                 label_smoothing=args.label_smoothing,
@@ -62,17 +64,17 @@ def parse_console():
     sp_train.add_argument("-v", "--verbosity", dest="verbosity", action="count", default=0)
     sp_train.add_argument("-o", "--output_folder", dest="output_folder_id", default=None)
     sp_train.add_argument("-y", "--dont_save_history", dest="save_history", action="store_false")
-    sp_train.add_argument("-g", "--gpu", dest="gpu", default=0)
+    sp_train.add_argument("-g", "--gpu", dest="gpu", default=1)
 
     # "evaluate_model" parser
     sp_evaluate = subparsers.add_parser("evaluate", aliases="e")
     sp_evaluate.set_defaults(func=evaluate_model_wrapper)
     sp_evaluate.add_argument("model_id")
-    sp_evaluate.add_argument("-s", "--split", dest="split_name", default="test")
+    sp_evaluate.add_argument("-s", "--split", dest="split_name", default="val")
     sp_evaluate.add_argument("-o", "--onset_threshold_list", dest="onset_threshold_list", type=float, nargs='+', default=[0.9, 0.8, 0.7])
     sp_evaluate.add_argument("-f", "--frame_threshold_list", dest="frame_threshold_list", type=float, nargs='+', default=[0.9, 0.8, 0.7])
     sp_evaluate.add_argument("-v", "--verbosity", dest="verbosity", action="count", default=0)
-    sp_evaluate.add_argument("-g", "--gpu", dest="gpu", default=0)
+    sp_evaluate.add_argument("-g", "--gpu", dest="gpu", default=1)
 
     # "read_eval parser"
     sp_read_eval = subparsers.add_parser("read_eval", aliases="r")
