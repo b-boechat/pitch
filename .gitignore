@@ -156,7 +156,11 @@ dev/*
 processed/*
 !processed/.gitkeep
 
-saved_models/*/*eval*.json
+#saved_models/*/*eval*.json
+#saved_models/*
+#!saved_models/.gitkeep
+
 
 fls.c
 swgm.c
+_todo.txt
