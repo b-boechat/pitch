@@ -163,3 +163,5 @@ saved_models/*
 fls.c
 swgm.c
 _todo.txt
+_run.sh
+_alt_run.sh
