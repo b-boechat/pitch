@@ -1,29 +1,24 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
-import matplotlib.pyplot as plt
-import glob
 import json
 from uuid import uuid4
 from model import get_compiled_model
 from deserialize_guitarset import prepare_dataset
-from definitions import PROCESSED_DATASETS_BASE_PATH, SAVED_MODELS_BASE_PATH
+from definitions import SAVED_MODELS_BASE_PATH
 
 def train(
         learning_rate, label_smoothing, buffer_size, batch_size, onset_positive_weight, epochs, verbose, 
         data_base_dir, output_folder_id, save_history):
 
-    model = get_compiled_model(learning_rate = learning_rate, label_smoothing = label_smoothing, 
-                               onset_positive_weight = onset_positive_weight, plot_summary = True)
+    model = get_compiled_model(learning_rate = learning_rate, label_smoothing = label_smoothing, onset_positive_weight = onset_positive_weight, plot_summary = True)
 
-    train_path_list = glob.glob(f"{PROCESSED_DATASETS_BASE_PATH}/{data_base_dir}/train/*.tfrecord")
-    dataset = prepare_dataset(train_path_list, buffer_size = buffer_size, batch_size = batch_size)
+    train_dataset = prepare_dataset(data_base_dir, "train", buffer_size = buffer_size, batch_size = batch_size)
 
-    val_path_list = glob.glob(f"{PROCESSED_DATASETS_BASE_PATH}/{data_base_dir}/val/*.tfrecord")
-    val_dataset = prepare_dataset(val_path_list, buffer_size = buffer_size, batch_size = batch_size)
+    val_dataset = prepare_dataset(data_base_dir, "val", buffer_size = buffer_size, batch_size = batch_size)
 
     history = model.fit(
-        dataset,
+        train_dataset,
         epochs = epochs,
         verbose = verbose,
         validation_data = val_dataset.take(batch_size//4),
@@ -31,7 +26,7 @@ def train(
     )
 
     print("Training dataset:")
-    model.evaluate(dataset, verbose = verbose)
+    model.evaluate(train_dataset, verbose = verbose)
     print("Validation dataset:")
     model.evaluate(val_dataset, verbose = verbose)
 

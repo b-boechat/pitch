@@ -10,7 +10,7 @@ def read_metrics(model_id, split_name="val", keys="all"):
     best_f_measure = -1.0
     best_onset_threshold, best_frame_threshold = -1., -1.
 
-    for path in sorted(glob(f"{model_folder}/{model_id}_eval_{split_name}*.json")):
+    for path in sorted(glob(f"{model_folder}/{model_id}_eval_{split_name}*.json")): # TODO move this glob call to a different function.
         dump = json.load(open(path, 'r'))
         meta = dump[0]
         records = dump[1:]
@@ -30,8 +30,3 @@ def read_metrics(model_id, split_name="val", keys="all"):
             print(f"{key}, mean: {key_mean}, std: {key_std}")
         print(end="\n\n")
     print(f"Best thresholds: ({best_onset_threshold}, {best_frame_threshold}). F_measure: {100*best_f_measure}%")
-
-
-if __name__ == "__main__":
-    #read_metrics("cqt_normalize_model")
-    read_metrics("swgm_model")

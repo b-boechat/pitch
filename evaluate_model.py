@@ -8,14 +8,14 @@ import mir_eval
 from librosa import midi_to_hz
 from model import restore_model_from_weights
 from note_creation import model_output_to_notes
-from deserialize_guitarset import fetch_dataset, output_batch_to_single
+from deserialize_guitarset import fetch_dataset, output_batch_to_single, get_split_filenames
 import glob
 from uuid import uuid4
 from definitions import DEFAULT_LABEL_SMOOTHING, DEFAULT_ONSET_POSITIVE_WEIGHT, SAVED_MODELS_BASE_PATH, PROCESSED_DATASETS_BASE_PATH
 from definitions import * # Temp.
 
-from librosa.display import specshow
-import matplotlib.pyplot as plt
+#from librosa.display import specshow
+#import matplotlib.pyplot as plt
 
 
 def evaluate_model(model_id, split_name, onset_threshold, frame_threshold, verbosity):
@@ -43,10 +43,10 @@ def get_model_and_ds_files(model_id, split_name, verbosity=1):
             onset_positive_weight = DEFAULT_ONSET_POSITIVE_WEIGHT
         )
     meta = json.load(open(f"{model_folder}/{model_id}_meta.json", 'r'))
-    if verbosity >= 2:
+    if verbosity >= 3:
         print(meta)
-    ds_path = f"{PROCESSED_DATASETS_BASE_PATH}/{meta['data_base_dir']}/{split_name}"
-    ds_files = glob.glob(f"{ds_path}/*.tfrecord")
+
+    ds_files = get_split_filenames(meta['data_base_dir'], split_name)
 
     return model, ds_files
 
@@ -267,6 +267,3 @@ def _predict_on_single(model, X_spec):
         The model's predicted output dict of posteriorgrams for the given input spectrogram.
     """
     return output_batch_to_single(model.predict_on_batch(np.expand_dims(X_spec, axis=0)))
-
-
-#if __name__ == "__main__":
