@@ -1,16 +1,15 @@
 import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 import tensorflow as tf
 import numpy as np
-#import matplotlib.pyplot as plt
-#import librosa
-#import librosa.display
-from definitions import AUDIO_SEGMENT_LEN_FRAMES, NOTES_TOTAL_BINS, CONTOURS_TOTAL_BINS
+from glob import glob
+from definitions import AUDIO_SEGMENT_LEN_FRAMES, NOTES_TOTAL_BINS, CONTOURS_TOTAL_BINS, PROCESSED_DATASETS_BASE_PATH
 
 from definitions import *
 
-def prepare_dataset(filenames, buffer_size, batch_size, num_parallel_reads=None):
+def prepare_dataset(data_base_dir, split_name, buffer_size, batch_size, num_parallel_reads=None):
     """Fetch and prepare a dataset for training or evaluation.
     """
+    filenames = get_split_filenames(data_base_dir, split_name)
     dataset = read_raw_dataset_from_files(filenames, num_parallel_reads)
     dataset = dataset.shuffle(buffer_size)
     dataset = dataset.map(_deserialize_example)
@@ -33,6 +32,10 @@ def zip_for_model(_, X_spec, X_contours, X_notes, X_onsets):
         "X_notes" : X_notes,
         "X_onsets" : X_onsets
     }
+
+def get_split_filenames(data_base_dir, split_name):
+    # Por enquanto, essa é a única opção:
+    return glob(f"{PROCESSED_DATASETS_BASE_PATH}/{data_base_dir}/{split_name}/*.tfrecord")
 
 def read_raw_dataset_from_files(filenames, num_parallel_reads=None):
     return tf.data.TFRecordDataset(filenames, num_parallel_reads=num_parallel_reads)
