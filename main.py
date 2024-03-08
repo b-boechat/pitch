@@ -4,7 +4,9 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 from definitions import DEFAULT_BATCH, DEFAULT_ONSET_POSITIVE_WEIGHT, \
     DEFAULT_SHUFFLE_BUFFER, DEFAULT_LEARNING_RATE, DEFAULT_LABEL_SMOOTHING, \
-    CQT_PROCESSED_BASE_PATH, DEFAULT_EPOCHS
+    CQT_PROCESSED_BASE_PATH, DEFAULT_EPOCHS, \
+    DEFAULT_ONSET_THRESHOLD_LIST, DEFAULT_FRAME_THRESHOLD_LIST, \
+    SAVED_MODELS_BASE_PATH
 from train import train
 from read_evaluation import read_metrics
 from evaluate_model import evaluate_model
@@ -12,8 +14,6 @@ from evaluate_model import evaluate_model
 def train_wrapper(args):
     if args.verbosity >= 1:
         print(args)
-
-    print(args.gpu)
 
     with tf.device(f'/GPU:{args.gpu}'):
         train(learning_rate=args.learning_rate,
@@ -25,7 +25,8 @@ def train_wrapper(args):
                 verbose=args.verbosity,
                 data_base_dir=args.data_base_dir,
                 output_folder_id=args.output_folder_id,
-                save_history=args.save_history
+                save_history=args.save_history,
+                output_base_path=SAVED_MODELS_BASE_PATH
         )
 
 def evaluate_model_wrapper(args):
@@ -71,8 +72,8 @@ def parse_console():
     sp_evaluate.set_defaults(func=evaluate_model_wrapper)
     sp_evaluate.add_argument("model_id")
     sp_evaluate.add_argument("-s", "--split", dest="split_name", default="val")
-    sp_evaluate.add_argument("-o", "--onset_threshold_list", dest="onset_threshold_list", type=float, nargs='+', default=[0.9, 0.8, 0.7])
-    sp_evaluate.add_argument("-f", "--frame_threshold_list", dest="frame_threshold_list", type=float, nargs='+', default=[0.9, 0.8, 0.7])
+    sp_evaluate.add_argument("-o", "--onset_threshold_list", dest="onset_threshold_list", type=float, nargs='+', default=DEFAULT_ONSET_THRESHOLD_LIST)
+    sp_evaluate.add_argument("-f", "--frame_threshold_list", dest="frame_threshold_list", type=float, nargs='+', default=DEFAULT_FRAME_THRESHOLD_LIST)
     sp_evaluate.add_argument("-v", "--verbosity", dest="verbosity", action="count", default=0)
     sp_evaluate.add_argument("-g", "--gpu", dest="gpu", default=1)
 
@@ -81,6 +82,22 @@ def parse_console():
     sp_read_eval.set_defaults(func=read_metrics_wrapper)
     sp_read_eval.add_argument("model_id")
     sp_read_eval.add_argument("-s", "--split", dest="split_name", default="test")
+
+
+    sp_cross_validate = subparsers.add_parser("cross_validate", aliases="c")
+    sp_cross_validate.add_argument("-r", "--lr", dest="learning_rate", type=float, metavar="LEARNING_RATE", default=DEFAULT_LEARNING_RATE)
+    sp_cross_validate.add_argument("-s", "--shuffle", dest="shuffle_buffer", type=int, metavar="SHUFFLE_BUFFER_SIZE", default=DEFAULT_SHUFFLE_BUFFER)
+    sp_cross_validate.add_argument("-b", "--batch", dest="batch_size", type=int, metavar="BATCH_SIZE", default=DEFAULT_BATCH)
+    sp_cross_validate.add_argument("-e", "--epochs", dest="epochs", type=int, metavar="EPOCHS", default=DEFAULT_EPOCHS)
+    sp_cross_validate.add_argument("-l", "--smoothing", dest="label_smoothing", type=float, metavar="LABEL_SMOOTHING", default=DEFAULT_LABEL_SMOOTHING)
+    sp_cross_validate.add_argument("-w", "--weight", dest="onset_positive_weight", type=float, default=DEFAULT_ONSET_POSITIVE_WEIGHT)
+    sp_cross_validate.add_argument("-i", "--data_base_dir", dest="data_base_dir", default=CQT_PROCESSED_BASE_PATH)
+    #sp_cross_validate.add_argument("-n", "--no_test", dest="no_test", action="store_true")
+    sp_cross_validate.add_argument("-v", "--verbosity", dest="verbosity", action="count", default=0)
+    sp_cross_validate.add_argument("-o", "--output_folder", dest="output_folder_id", default=None)
+    sp_cross_validate.add_argument("-y", "--dont_save_history", dest="save_history", action="store_false")
+    sp_cross_validate.add_argument("-g", "--gpu", dest="gpu", default=1)
+    sp_cross_validate.add_argument("-n", "--num_groups", dest="num_groups", default=10)
 
 
     args = parser.parse_args()

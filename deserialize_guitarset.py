@@ -6,10 +6,19 @@ from definitions import AUDIO_SEGMENT_LEN_FRAMES, NOTES_TOTAL_BINS, CONTOURS_TOT
 
 from definitions import *
 
-def prepare_dataset(data_base_dir, split_name, buffer_size, batch_size, num_parallel_reads=None):
+# TODO add more docstrings and comments to this file.
+
+def prepare_dataset_split(data_base_dir, split_name, buffer_size, batch_size, num_parallel_reads=None):
     """Fetch and prepare a dataset for training or evaluation.
     """
     filenames = get_split_filenames(data_base_dir, split_name)
+    return prepare_files(filenames, buffer_size, batch_size, num_parallel_reads)
+
+def prepare_dataset_cv(data_base_dir, cv_split_name, num_cv_groups, cv_index, all_except_group, buffer_size, batch_size, num_parallel_reads=None):
+    filenames = get_cv_filenames(data_base_dir, cv_split_name, num_cv_groups, cv_index, all_except_group)
+    return prepare_files(filenames, buffer_size, batch_size, num_parallel_reads)
+
+def prepare_files(filenames, buffer_size, batch_size, num_parallel_reads=None):
     dataset = read_raw_dataset_from_files(filenames, num_parallel_reads)
     dataset = dataset.shuffle(buffer_size)
     dataset = dataset.map(_deserialize_example)
@@ -17,25 +26,22 @@ def prepare_dataset(data_base_dir, split_name, buffer_size, batch_size, num_para
     dataset = dataset.batch(batch_size, drop_remainder=True).prefetch(batch_size)
     return dataset
 
+def get_split_filenames(data_base_dir, split_name):
+    return glob(f"{PROCESSED_DATASETS_BASE_PATH}/{data_base_dir}/{split_name}/*.tfrecord")
+
+def get_cv_filenames(data_base_dir, cv_split_name, num_cv_groups, cv_index, all_except_group):
+    all_filenames = get_split_filenames(data_base_dir, cv_split_name)
+    group_filenames = np.split(all_filenames, num_cv_groups)
+    if all_except_group:
+        return [filename for i in range(num_cv_groups) for filename in group_filenames[i] if i != cv_index]
+    return group_filenames[cv_index]
+
 def fetch_dataset(filenames, num_parallel_reads=None):
     """Fetch a dataset without shuffling, batching or zipping.
     """
     dataset = read_raw_dataset_from_files(filenames, num_parallel_reads)
     dataset = dataset.map(_deserialize_example)
     return dataset
-
-def zip_for_model(_, X_spec, X_contours, X_notes, X_onsets):
-    """Transform an example (as returned by deserialize example) into a tuple (inputs, outputs), expected by model.fit.
-    """
-    return X_spec, {
-        "X_contours": X_contours, 
-        "X_notes" : X_notes,
-        "X_onsets" : X_onsets
-    }
-
-def get_split_filenames(data_base_dir, split_name):
-    # Por enquanto, essa é a única opção:
-    return glob(f"{PROCESSED_DATASETS_BASE_PATH}/{data_base_dir}/{split_name}/*.tfrecord")
 
 def read_raw_dataset_from_files(filenames, num_parallel_reads=None):
     return tf.data.TFRecordDataset(filenames, num_parallel_reads=num_parallel_reads)
@@ -105,6 +111,14 @@ def output_batch_to_single(batch):
         "X_onsets": batch["X_onsets"][0], 
     }
 
+def zip_for_model(_, X_spec, X_contours, X_notes, X_onsets):
+    """Transform an example (as returned by deserialize example) into a tuple (inputs, outputs), expected by model.fit.
+    """
+    return X_spec, {
+        "X_contours": X_contours, 
+        "X_notes" : X_notes,
+        "X_onsets" : X_onsets
+    }
 
 if __name__ == "__main__":
     dataset = read_raw_dataset_from_files("guitarset_processed/training/split_002.tfrecord")

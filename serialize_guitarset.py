@@ -30,7 +30,7 @@ class GuitarsetSerializer:
                  notes_total_bins=NOTES_TOTAL_BINS, 
                  notes_bins_per_octave=NOTES_BINS_PER_OCTAVE, 
                  combination_method_str=None,
-                 combination_params={}
+                 combination_params={},
                  ) -> None:
         """
         destination_base_dir_name (string): Name of the base destination directory for the processed dataset. Implied path is "PROCESSED_DATASETS_BASE_PATH/destination_base_dir_name". Subdirectories for each split are automatically created.
@@ -145,7 +145,6 @@ class GuitarsetSerializer:
             self._process_split(tracks, splits_dict[name], split_path)
         
         print("Done.")
-        #self._process_split(tracks, split_keys_list=splits_dict["training"], splits_dir="dev_guitarset_processed/training")
 
     def _process_split(self, tracks, split_keys_list, splits_dir):
         """This function takes in a dictionary of audio tracks, a list of keys that correspond to the tracks, and the directory 
@@ -163,8 +162,8 @@ class GuitarsetSerializer:
         # Split the audio tracks into smaller pieces and save them in TensorFlow record files.
         for i in range(num_record_files - 1):
             # Create a TensorFlow record writer for the current record file.
-            with tf.io.TFRecordWriter(f"{splits_dir}/split_{i:03d}.tfrecord") as writer:
-                print(f"Writing \"{splits_dir}/split_{i:03d}.tfrecord\"")
+            with tf.io.TFRecordWriter(f"{splits_dir}/file_{i:03d}.tfrecord") as writer:
+                print(f"Writing \"{splits_dir}/file_{i:03d}.tfrecord\"")
                 for j in range(self.num_tracks_per_record_file):
                     # Get the index of the current audio track.
                     track_index = i * self.num_tracks_per_record_file + j
@@ -177,8 +176,8 @@ class GuitarsetSerializer:
                         writer.write(example)
 
         # Do the same for the last record file, which might have fewer audio tracks than the others.
-        with tf.io.TFRecordWriter(f"{splits_dir}/split_{num_record_files-1:03d}.tfrecord") as writer:
-            print(f"Writing \"{splits_dir}/split_{num_record_files-1:03d}.tfrecord\"")
+        with tf.io.TFRecordWriter(f"{splits_dir}/file_{num_record_files-1:03d}.tfrecord") as writer:
+            print(f"Writing \"{splits_dir}/file_{num_record_files-1:03d}.tfrecord\"")
             for track_index in range((num_record_files - 1) * self.num_tracks_per_record_file, num_tracks):
                 key = split_keys_list[track_index]
                 serialized_track_examples = self._process_track(key, tracks[key])
@@ -325,5 +324,21 @@ if __name__ == "__main__":
     #serializer = GuitarsetSerializer(destination_base_dir_name="fls_base", combination_method_str="fls")
     #serializer = GuitarsetSerializer(destination_base_dir_name="fls_fw11", combination_method_str="fls", combination_params={'freq_width': 11})
     #serializer = GuitarsetSerializer(destination_base_dir_name="swgm_base", combination_method_str="swgm")
-    serializer = GuitarsetSerializer(destination_base_dir_name="lalala")
-    serializer.show_size_information()
+    serializer_cqt = GuitarsetSerializer(
+            destination_base_dir_name="cqt_all",
+            combination_method_str=None
+        )
+    serializer_cqt.serialize(splits=[0.9, 0.1], split_names=["cv", "test"], seed=1)
+
+    serializer_swgm = GuitarsetSerializer(
+            destination_base_dir_name="swgm_all", 
+            combination_method_str="swgm"
+        )
+    serializer_swgm.serialize(splits=[0.9, 0.1], split_names=["cv", "test"], seed=1)
+
+    serializer_fls = GuitarsetSerializer(
+        destination_base_dir_name="fls_fw11", 
+        combination_method_str="fls", 
+        combination_params={'freq_width': 11}
+    )
+    serializer_fls.serialize(splits=[0.9, 0.1], split_names=["cv", "test"], seed=1)

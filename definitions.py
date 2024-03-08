@@ -1,5 +1,7 @@
 from math import floor, ceil, log2
 
+# TODO translate comments to EN-US
+
 RANDOM_SEED = 1
 GUITARSET_BASE_PATH = "D:\\mirdata datasets\guitarset"
 AUDIO_SAMPLE_RATE = 22050 # A referência usa 22050 (provavelmente para adequar databases diferentes). Mas o Guitarset tem sample rate 44100, então isso pode ser aproveitado.
@@ -54,3 +56,8 @@ DEFAULT_BATCH = 32
 DEFAULT_EPOCHS = 100
 DEFAULT_LABEL_SMOOTHING = 0.2
 DEFAULT_ONSET_POSITIVE_WEIGHT = 0.95
+
+
+#
+DEFAULT_ONSET_THRESHOLD_LIST = [0.8, 0.9]
+DEFAULT_FRAME_THRESHOLD_LIST = [0.8, 0.7, 0.6]
