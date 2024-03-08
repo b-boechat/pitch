@@ -326,19 +326,22 @@ if __name__ == "__main__":
     #serializer = GuitarsetSerializer(destination_base_dir_name="swgm_base", combination_method_str="swgm")
     serializer_cqt = GuitarsetSerializer(
             destination_base_dir_name="cqt_all",
-            combination_method_str=None
+            combination_method_str=None,
+            num_tracks_per_record_file=4
         )
     serializer_cqt.serialize(splits=[0.9, 0.1], split_names=["cv", "test"], seed=1)
 
     serializer_swgm = GuitarsetSerializer(
             destination_base_dir_name="swgm_all", 
-            combination_method_str="swgm"
+            combination_method_str="swgm",
+            num_tracks_per_record_file=4
         )
     serializer_swgm.serialize(splits=[0.9, 0.1], split_names=["cv", "test"], seed=1)
 
     serializer_fls = GuitarsetSerializer(
         destination_base_dir_name="fls_fw11", 
         combination_method_str="fls", 
-        combination_params={'freq_width': 11}
+        combination_params={'freq_width': 11},
+        num_tracks_per_record_file=4
     )
     serializer_fls.serialize(splits=[0.9, 0.1], split_names=["cv", "test"], seed=1)

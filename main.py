@@ -8,6 +8,7 @@ from definitions import DEFAULT_BATCH, DEFAULT_ONSET_POSITIVE_WEIGHT, \
     DEFAULT_ONSET_THRESHOLD_LIST, DEFAULT_FRAME_THRESHOLD_LIST, \
     SAVED_MODELS_BASE_PATH
 from train import train
+from cross_validate import cross_validate
 from read_evaluation import read_metrics
 from evaluate_model import evaluate_model
 
@@ -16,17 +17,18 @@ def train_wrapper(args):
         print(args)
 
     with tf.device(f'/GPU:{args.gpu}'):
-        train(learning_rate=args.learning_rate,
-                label_smoothing=args.label_smoothing,
-                buffer_size=args.shuffle_buffer,
-                batch_size=args.batch_size,
-                epochs=args.epochs,
-                onset_positive_weight=args.onset_positive_weight,
-                verbose=args.verbosity,
-                data_base_dir=args.data_base_dir,
-                output_folder_id=args.output_folder_id,
-                save_history=args.save_history,
-                output_base_path=SAVED_MODELS_BASE_PATH
+        train(
+            learning_rate=args.learning_rate,
+            label_smoothing=args.label_smoothing,
+            buffer_size=args.shuffle_buffer,
+            batch_size=args.batch_size,
+            onset_positive_weight=args.onset_positive_weight,
+            epochs=args.epochs,
+            verbose=args.verbosity,
+            data_base_dir=args.data_base_dir,
+            output_folder_id=args.output_folder_id,
+            save_history=args.save_history,
+            output_base_path=SAVED_MODELS_BASE_PATH
         )
 
 def evaluate_model_wrapper(args):
@@ -36,15 +38,36 @@ def evaluate_model_wrapper(args):
     with tf.device(f'/GPU:{args.gpu}'):
         for onset_threshold in args.onset_threshold_list:
             for frame_threshold in args.frame_threshold_list:
-                evaluate_model(args.model_id, 
-                        args.split_name, 
-                        onset_threshold,
-                        frame_threshold,
-                        args.verbosity
+                evaluate_model(
+                    args.model_id, 
+                    args.split_name, 
+                    onset_threshold,
+                    frame_threshold,
+                    args.verbosity
                 )
 
 def read_metrics_wrapper(args): # TODO add other arguments
     read_metrics(args.model_id, split_name=args.split_name)
+
+def cross_validate_wrapper(args):
+    if args.verbosity >= 1:
+        print(args)
+
+    with tf.device(f'/GPU:{args.gpu}'):
+        cross_validate(
+            learning_rate=args.learning_rate,
+            label_smoothing=args.label_smoothing,
+            buffer_size=args.shuffle_buffer,
+            batch_size=args.batch_size,
+            onset_positive_weight=args.onset_positive_weight,
+            epochs=args.epochs,
+            verbose=args.verbosity,
+            data_base_dir=args.data_base_dir,
+            output_cv_folder_id=args.output_cv_folder_id,
+            save_history=args.save_history,
+            num_cv_groups=args.num_cv_groups,
+            output_base_path=SAVED_MODELS_BASE_PATH
+        )
 
 def parse_console():
     parser = ap.ArgumentParser(description="Interface para treinamento e avaliação do sistema de detecção de frequência fundamental baseado no \"basic pitch\"")
@@ -84,7 +107,8 @@ def parse_console():
     sp_read_eval.add_argument("-s", "--split", dest="split_name", default="test")
 
 
-    sp_cross_validate = subparsers.add_parser("cross_validate", aliases="c")
+    sp_cross_validate = subparsers.add_parser("crossvalidate", aliases="c")
+    sp_cross_validate.set_defaults(func=cross_validate_wrapper)
     sp_cross_validate.add_argument("-r", "--lr", dest="learning_rate", type=float, metavar="LEARNING_RATE", default=DEFAULT_LEARNING_RATE)
     sp_cross_validate.add_argument("-s", "--shuffle", dest="shuffle_buffer", type=int, metavar="SHUFFLE_BUFFER_SIZE", default=DEFAULT_SHUFFLE_BUFFER)
     sp_cross_validate.add_argument("-b", "--batch", dest="batch_size", type=int, metavar="BATCH_SIZE", default=DEFAULT_BATCH)
@@ -94,10 +118,10 @@ def parse_console():
     sp_cross_validate.add_argument("-i", "--data_base_dir", dest="data_base_dir", default=CQT_PROCESSED_BASE_PATH)
     #sp_cross_validate.add_argument("-n", "--no_test", dest="no_test", action="store_true")
     sp_cross_validate.add_argument("-v", "--verbosity", dest="verbosity", action="count", default=0)
-    sp_cross_validate.add_argument("-o", "--output_folder", dest="output_folder_id", default=None)
+    sp_cross_validate.add_argument("-o", "--output_cv_folder", dest="output_cv_folder_id", default=None)
     sp_cross_validate.add_argument("-y", "--dont_save_history", dest="save_history", action="store_false")
     sp_cross_validate.add_argument("-g", "--gpu", dest="gpu", default=1)
-    sp_cross_validate.add_argument("-n", "--num_groups", dest="num_groups", default=10)
+    sp_cross_validate.add_argument("-n", "--num_cv_groups", dest="num_cv_groups", type=int, default=10)
 
 
     args = parser.parse_args()

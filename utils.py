@@ -1,4 +1,5 @@
 import os
+from uuid import uuid4
 
 def create_unique_folder(folder_base_path, folder_id, verbose=1):
     folder_path = f"{folder_base_path}/{folder_id}"

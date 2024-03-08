@@ -14,8 +14,8 @@ def prepare_dataset_split(data_base_dir, split_name, buffer_size, batch_size, nu
     filenames = get_split_filenames(data_base_dir, split_name)
     return prepare_files(filenames, buffer_size, batch_size, num_parallel_reads)
 
-def prepare_dataset_cv(data_base_dir, cv_split_name, num_cv_groups, cv_index, all_except_group, buffer_size, batch_size, num_parallel_reads=None):
-    filenames = get_cv_filenames(data_base_dir, cv_split_name, num_cv_groups, cv_index, all_except_group)
+def prepare_dataset_cv(data_base_dir, cv_split_name, num_cv_groups, cv_index, is_train_dataset, buffer_size, batch_size, num_parallel_reads=None):
+    filenames = get_cv_filenames(data_base_dir, cv_split_name, num_cv_groups, cv_index, all_except_group=is_train_dataset)
     return prepare_files(filenames, buffer_size, batch_size, num_parallel_reads)
 
 def prepare_files(filenames, buffer_size, batch_size, num_parallel_reads=None):
@@ -31,10 +31,10 @@ def get_split_filenames(data_base_dir, split_name):
 
 def get_cv_filenames(data_base_dir, cv_split_name, num_cv_groups, cv_index, all_except_group):
     all_filenames = get_split_filenames(data_base_dir, cv_split_name)
-    group_filenames = np.split(all_filenames, num_cv_groups)
+    group_filenames = np.array_split(np.array(all_filenames), num_cv_groups) # TODO Should probably refactor this without NumPy.
     if all_except_group:
         return [filename for i in range(num_cv_groups) for filename in group_filenames[i] if i != cv_index]
-    return group_filenames[cv_index]
+    return list(group_filenames[cv_index])
 
 def fetch_dataset(filenames, num_parallel_reads=None):
     """Fetch a dataset without shuffling, batching or zipping.
