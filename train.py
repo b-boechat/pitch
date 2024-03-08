@@ -17,10 +17,14 @@ def train(
 
     model, history = _fit(train_dataset, val_dataset, learning_rate, label_smoothing, onset_positive_weight, epochs, batch_size, verbose)
 
-    if output_folder_id is not None:
-        output_folder_path = create_unique_folder(output_base_path, output_folder_id, verbose)
-        model.save_weights(f"{output_folder_path}/{output_folder_id}.h5", overwrite = True, save_format = "h5")
-        json.dump({
+    if not save_history:
+        history = None
+
+    _save_model(
+        model=model, 
+        output_base_path=output_base_path, 
+        output_folder_id=output_folder_id,
+        meta_dict={
             "learning_rate": learning_rate,
             "label_smoothing": label_smoothing,
             "buffer_size": buffer_size,
@@ -28,9 +32,10 @@ def train(
             "onset_positive_weight": onset_positive_weight,
             "epochs": epochs,
             "data_base_dir": data_base_dir
-        }, open(f"{output_folder_path}/{output_folder_id}_meta.json", 'w'))
-        if save_history:
-            json.dump(history.history, open(f"{output_folder_path}/{output_folder_id}_history.json", 'w'))
+        },
+        history=history, 
+        verbose=verbose
+    )
 
 def _fit(train_dataset, val_dataset, learning_rate, label_smoothing, onset_positive_weight, epochs, batch_size, verbose):
 
@@ -51,3 +56,10 @@ def _fit(train_dataset, val_dataset, learning_rate, label_smoothing, onset_posit
         model.evaluate(val_dataset, verbose = verbose)
 
     return model, history    
+
+def _save_model(model, output_base_path, output_folder_id, meta_dict, history, verbose):
+    output_folder_path = create_unique_folder(output_base_path, output_folder_id, verbose)
+    model.save_weights(f"{output_folder_path}/{output_folder_id}.h5", overwrite = True, save_format = "h5")
+    json.dump(meta_dict, open(f"{output_folder_path}/{output_folder_id}_meta.json", 'w'))
+    if history is not None:
+        json.dump(history.history, open(f"{output_folder_path}/{output_folder_id}_history.json", 'w'))
