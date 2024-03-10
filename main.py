@@ -18,17 +18,17 @@ def train_wrapper(args):
 
     with tf.device(f'/GPU:{args.gpu}'):
         train(
-            learning_rate=args.learning_rate,
-            label_smoothing=args.label_smoothing,
-            buffer_size=args.shuffle_buffer,
-            batch_size=args.batch_size,
-            onset_positive_weight=args.onset_positive_weight,
-            epochs=args.epochs,
-            verbose=args.verbosity,
-            data_base_dir=args.data_base_dir,
-            output_folder_id=args.output_folder_id,
-            save_history=args.save_history,
-            output_base_path=SAVED_MODELS_BASE_PATH
+            learning_rate = args.learning_rate,
+            label_smoothing = args.label_smoothing,
+            buffer_size = args.shuffle_buffer,
+            batch_size = args.batch_size,
+            onset_positive_weight = args.onset_positive_weight,
+            epochs = args.epochs,
+            verbose = args.verbosity,
+            data_base_dir = args.data_base_dir,
+            output_folder_id = args.output_folder_id,
+            save_history = args.save_history,
+            output_base_path = SAVED_MODELS_BASE_PATH
         )
 
 def evaluate_model_wrapper(args):
@@ -39,11 +39,12 @@ def evaluate_model_wrapper(args):
         for onset_threshold in args.onset_threshold_list:
             for frame_threshold in args.frame_threshold_list:
                 evaluate_model(
-                    args.model_id, 
-                    args.split_name, 
-                    onset_threshold,
-                    frame_threshold,
-                    args.verbosity
+                    model_id = args.model_id, 
+                    split_name = args.split_name, 
+                    onset_threshold = onset_threshold,
+                    frame_threshold = frame_threshold,
+                    base_path = args.base_path,
+                    verbosity = args.verbosity
                 )
 
 def read_metrics_wrapper(args): # TODO add other arguments
@@ -55,18 +56,19 @@ def cross_validate_wrapper(args):
 
     with tf.device(f'/GPU:{args.gpu}'):
         cross_validate(
-            learning_rate=args.learning_rate,
-            label_smoothing=args.label_smoothing,
-            buffer_size=args.shuffle_buffer,
-            batch_size=args.batch_size,
-            onset_positive_weight=args.onset_positive_weight,
-            epochs=args.epochs,
-            verbose=args.verbosity,
-            data_base_dir=args.data_base_dir,
-            output_cv_folder_id=args.output_cv_folder_id,
-            save_history=args.save_history,
-            num_cv_groups=args.num_cv_groups,
-            output_base_path=SAVED_MODELS_BASE_PATH
+            learning_rate = args.learning_rate,
+            label_smoothing = args.label_smoothing,
+            buffer_size = args.shuffle_buffer,
+            batch_size = args.batch_size,
+            onset_positive_weight = args.onset_positive_weight,
+            epochs = args.epochs,
+            verbose = args.verbosity,
+            data_base_dir = args.data_base_dir,
+            output_cv_folder_id = args.output_cv_folder_id,
+            save_history = args.save_history,
+            num_cv_groups = args.num_cv_groups,
+            output_base_path = SAVED_MODELS_BASE_PATH,
+            model_index_to_resume = args.model_index_to_resume
         )
 
 def parse_console():
@@ -97,6 +99,7 @@ def parse_console():
     sp_evaluate.add_argument("-s", "--split", dest="split_name", default="val")
     sp_evaluate.add_argument("-o", "--onset_threshold_list", dest="onset_threshold_list", type=float, nargs='+', default=DEFAULT_ONSET_THRESHOLD_LIST)
     sp_evaluate.add_argument("-f", "--frame_threshold_list", dest="frame_threshold_list", type=float, nargs='+', default=DEFAULT_FRAME_THRESHOLD_LIST)
+    sp_evaluate.add_argument("-b", "--base_path", dest="base_path", default=SAVED_MODELS_BASE_PATH)
     sp_evaluate.add_argument("-v", "--verbosity", dest="verbosity", action="count", default=0)
     sp_evaluate.add_argument("-g", "--gpu", dest="gpu", default=1)
 
@@ -122,6 +125,7 @@ def parse_console():
     sp_cross_validate.add_argument("-y", "--dont_save_history", dest="save_history", action="store_false")
     sp_cross_validate.add_argument("-g", "--gpu", dest="gpu", default=1)
     sp_cross_validate.add_argument("-n", "--num_cv_groups", dest="num_cv_groups", type=int, default=10)
+    sp_cross_validate.add_argument("-x", "--model_index_to_resume", dest="model_index_to_resume", type=int)
 
 
     args = parser.parse_args()

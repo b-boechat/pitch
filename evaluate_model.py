@@ -11,20 +11,19 @@ from note_creation import model_output_to_notes
 from deserialize_guitarset import fetch_dataset, output_batch_to_single, get_split_filenames
 import glob
 from uuid import uuid4
-from definitions import DEFAULT_LABEL_SMOOTHING, DEFAULT_ONSET_POSITIVE_WEIGHT, SAVED_MODELS_BASE_PATH, PROCESSED_DATASETS_BASE_PATH
-from definitions import * # Temp.
+from definitions import DEFAULT_LABEL_SMOOTHING, DEFAULT_ONSET_POSITIVE_WEIGHT
 
 #from librosa.display import specshow
 #import matplotlib.pyplot as plt
 
 
-def evaluate_model(model_id, split_name, onset_threshold, frame_threshold, verbosity):
-    model, ds_files = get_model_and_ds_files(model_id, split_name, verbosity=verbosity)
+def evaluate_model(model_id, split_name, onset_threshold, frame_threshold, base_path, verbosity):
+    model, ds_files = get_model_and_ds_files(model_id, split_name, base_path, verbosity=verbosity)
 
     metrics_meta = [{"split_name": split_name, "onset_threshold": onset_threshold, "frame_threshold": frame_threshold}]
-    output_path = f"{SAVED_MODELS_BASE_PATH}/{model_id}/{model_id}_eval_{split_name}_{int(onset_threshold*100)}_{int(frame_threshold*100)}.json"
+    output_path = f"{base_path}/{model_id}/{model_id}_eval_{split_name}_{int(onset_threshold*100)}_{int(frame_threshold*100)}.json"
     if os.path.exists(output_path):
-        output_path = f"{SAVED_MODELS_BASE_PATH}/{model_id}/{model_id}_eval_{split_name}_{int(onset_threshold*100)}_{int(frame_threshold*100)}-{uuid4().hex}.json"
+        output_path = f"{base_path}/{model_id}/{model_id}_eval_{split_name}_{int(onset_threshold*100)}_{int(frame_threshold*100)}-{uuid4().hex}.json"
 
     if verbosity >= 1:
         print(metrics_meta)
@@ -35,14 +34,15 @@ def evaluate_model(model_id, split_name, onset_threshold, frame_threshold, verbo
         print(f"Writing to {output_path}", end="\n\n")
     json.dump(metrics_meta + metrics_list, open(output_path, 'w'))
 
-def get_model_and_ds_files(model_id, split_name, verbosity=1):
-    model_folder = f"{SAVED_MODELS_BASE_PATH}/{model_id}"
+def get_model_and_ds_files(model_id, split_name, base_path, verbosity=1):
+    model_folder = f"{base_path}/{model_id}"
     model = restore_model_from_weights(
             f"{model_folder}/{model_id}.h5", 
             label_smoothing = DEFAULT_LABEL_SMOOTHING,  
             onset_positive_weight = DEFAULT_ONSET_POSITIVE_WEIGHT
         )
     meta = json.load(open(f"{model_folder}/{model_id}_meta.json", 'r'))
+
     if verbosity >= 3:
         print(meta)
 
