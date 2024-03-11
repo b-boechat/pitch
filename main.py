@@ -9,14 +9,11 @@ from definitions import DEFAULT_BATCH, DEFAULT_ONSET_POSITIVE_WEIGHT, \
     SAVED_MODELS_BASE_PATH, \
     DEFAULT_CV_SPLIT_NAME
 from train import train
-from cross_validate import train_cv
+from cross_validate import train_cv, evaluate_model_cv
 from read_evaluation import read_metrics
 from evaluate_model import evaluate_model
 
 def train_wrapper(args):
-    if args.verbosity >= 1:
-        print(args)
-
     with tf.device(f'/GPU:{args.gpu}'):
         train(
             learning_rate = args.learning_rate,
@@ -33,9 +30,6 @@ def train_wrapper(args):
         )
 
 def evaluate_model_wrapper(args):
-    if args.verbosity >= 1:
-        print(args)
-
     with tf.device(f'/GPU:{args.gpu}'):
         for onset_threshold in args.onset_threshold_list:
             for frame_threshold in args.frame_threshold_list:
@@ -45,16 +39,13 @@ def evaluate_model_wrapper(args):
                     onset_threshold = onset_threshold,
                     frame_threshold = frame_threshold,
                     base_path = args.base_path,
-                    verbosity = args.verbosity
+                    verbose = args.verbosity
                 )
 
 def read_metrics_wrapper(args): # TODO add other arguments
     read_metrics(args.model_id, split_name=args.split_name)
 
 def train_cv_wrapper(args):
-    if args.verbosity >= 1:
-        print(args)
-
     with tf.device(f'/GPU:{args.gpu}'):
         train_cv(
             learning_rate = args.learning_rate,
@@ -71,6 +62,18 @@ def train_cv_wrapper(args):
             output_base_path = SAVED_MODELS_BASE_PATH,
             cv_split_name = args.cv_split_name,
             model_index_to_resume = args.model_index_to_resume
+        )
+
+def evaluate_model_cv_wrapper(args):
+    with tf.device(f'/GPU:{args.gpu}'):
+        evaluate_model_cv(
+            cv_folder_id = args.cv_folder_id,
+            cv_split_name = args.cv_split_name,
+            split = args.split_name,
+            onset_threshold_list = args.onset_threshold_list,
+            frame_threshold_list = args.frame_threshold_list,
+            saved_models_base_path = args.base_path,
+            verbose = args.verbosity
         )
 
 def parse_console():
@@ -130,12 +133,24 @@ def parse_console():
     sp_train_cv.add_argument("-x", "--model_index_to_resume", dest="model_index_to_resume", type=int)
 
 
-    #
-    #sp_evaluate_cv = subparsers.add_parser("evaluate_cv", aliases=["ec"])
+    # "evaluate_model" parser
+    sp_evaluate_cv = subparsers.add_parser("evaluate_cv", aliases=["ec"])
+    sp_evaluate_cv.set_defaults(func=evaluate_model_cv_wrapper)
+    sp_evaluate_cv.add_argument("cv_folder_id")
+    sp_evaluate_cv.add_argument("-s", "--split", dest="split_name", default="val") # Validation set is implicitly assumed to be the i-th group files for the i-th model.
+    sp_evaluate_cv.add_argument("-o", "--onset_threshold_list", dest="onset_threshold_list", type=float, nargs='+', default=DEFAULT_ONSET_THRESHOLD_LIST)
+    sp_evaluate_cv.add_argument("-f", "--frame_threshold_list", dest="frame_threshold_list", type=float, nargs='+', default=DEFAULT_FRAME_THRESHOLD_LIST)
+    sp_evaluate_cv.add_argument("-b", "--saved_models_base_path", dest="base_path", default=SAVED_MODELS_BASE_PATH)
+    sp_evaluate_cv.add_argument("-p", "--cv_split_name", dest="cv_split_name", default=DEFAULT_CV_SPLIT_NAME)
+    sp_evaluate_cv.add_argument("-v", "--verbosity", dest="verbosity", action="count", default=0)
+    sp_evaluate_cv.add_argument("-g", "--gpu", dest="gpu", default=1)
 
 
 
     args = parser.parse_args()
+    if args.verbosity >= 1:
+        print(args)
+    
     if hasattr(args, "func"):
         args.func(args)
     else:

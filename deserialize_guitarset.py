@@ -26,11 +26,11 @@ def prepare_files(filenames, buffer_size, batch_size, num_parallel_reads=None):
     dataset = dataset.batch(batch_size, drop_remainder=True).prefetch(batch_size)
     return dataset
 
-def get_split_filenames(data_base_dir, split_name):
-    return glob(f"{PROCESSED_DATASETS_BASE_PATH}/{data_base_dir}/{split_name}/*.tfrecord")
+def get_split_filenames(data_base_dir, split_name, processed_datasets_base_path=PROCESSED_DATASETS_BASE_PATH):
+    return glob(f"{processed_datasets_base_path}/{data_base_dir}/{split_name}/*.tfrecord")
 
-def get_cv_filenames(data_base_dir, cv_split_name, num_cv_groups, cv_index, all_except_group):
-    all_filenames = get_split_filenames(data_base_dir, cv_split_name)
+def get_cv_filenames(data_base_dir, cv_split_name, num_cv_groups, cv_index, all_except_group, processed_datasets_base_path=PROCESSED_DATASETS_BASE_PATH):
+    all_filenames = get_split_filenames(data_base_dir, cv_split_name, processed_datasets_base_path)
     group_filenames = np.array_split(np.array(all_filenames), num_cv_groups) # TODO Should probably refactor this without NumPy.
     if all_except_group:
         return [filename for i in range(num_cv_groups) for filename in group_filenames[i] if i != cv_index]

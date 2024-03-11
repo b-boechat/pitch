@@ -37,17 +37,18 @@ def evaluate_model(model_id, split_name, onset_threshold, frame_threshold, base_
 
 def _load_model_and_ds_split(model_id, split_name, base_path, verbosity=1):
     model_folder = f"{base_path}/{model_id}"
+    meta = json.load(open(f"{model_folder}/{model_id}_meta.json", 'r'))
+
     model = restore_model_from_weights(
             f"{model_folder}/{model_id}.h5", 
-            label_smoothing = DEFAULT_LABEL_SMOOTHING,  
-            onset_positive_weight = DEFAULT_ONSET_POSITIVE_WEIGHT
+            label_smoothing = meta["label_smoothing"],  
+            onset_positive_weight = meta["default_onset_positive_weight"]
         )
-    meta = json.load(open(f"{model_folder}/{model_id}_meta.json", 'r'))
 
     if verbosity >= 3:
         print(meta)
 
-    ds_files = get_split_filenames(meta['data_base_dir'], split_name)
+    ds_files = get_split_filenames(meta["data_base_dir"], split_name)
 
     return model, ds_files
 
@@ -62,7 +63,7 @@ def mir_evaluate_model_on_files(model, file_path, onset_threshold, frame_thresho
 
     Args:
         model (tensorflow.keras.Model): The trained model to be evaluated.
-        file_path (str): The path to the directory containing the audio files to be evaluated.
+        file_path --- fix this docstring
         onset_threshold (float): The onset threshold for note creation, a value between 0 and 1.
         frame_threshold (float): The frame threshold for note creation, a value between 0 and 1.
         mode (str): The operation mode of the function, either "return" or "print". Defaults to "return".

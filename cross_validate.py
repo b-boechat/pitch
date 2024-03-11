@@ -1,7 +1,10 @@
 import json
 from utils import create_unique_folder, get_folder_path
-from deserialize_guitarset import prepare_dataset_cv, get_cv_filenames
+from deserialize_guitarset import prepare_dataset_cv, get_cv_filenames, get_split_filenames
 from train import _fit, _save_model
+from model import restore_model_from_weights
+from evaluate_model import _get_eval_output_json_path, mir_evaluate_model_on_files
+from definitions import DEFAULT_VAL_SPLIT_NAME, DEFAULT_TEST_SPLIT_NAME
 
 def train_cv(
         learning_rate, label_smoothing, buffer_size, batch_size, onset_positive_weight, epochs, verbose, 
@@ -71,4 +74,61 @@ def train_cv(
             verbose=verbose
         )
 
-#def evaluate_model(cv_folder_id, split_name, onset_threshold, frame_threshold, base_path, verbosity):
+def evaluate_model_cv(cv_folder_id, cv_split_name, split, onset_threshold_list, frame_threshold_list, saved_models_base_path, verbose):
+    assert split in (DEFAULT_VAL_SPLIT_NAME, DEFAULT_TEST_SPLIT_NAME) # TODO For now, it's assumed that these are the splits names used (or implied, in the cal of "val" in a "cv" split).
+    
+    cv_base_path = f"{saved_models_base_path}/{cv_folder_id}"
+    cv_meta = json.load(open(f"{cv_base_path}/{cv_folder_id}_cv_meta.json", 'r'))
+
+    num_cv_groups = cv_meta["num_cv_groups"]
+    data_base_dir = cv_meta["data_base_dir"]
+    
+    for i in range(num_cv_groups):
+        
+        model_id = f"{cv_folder_id}_group_{i}"
+        model = restore_model_from_weights(
+                                saved_model_path = f"{cv_base_path}/{model_id}/{model_id}.h5",
+                                label_smoothing = cv_meta["label_smoothing"],
+                                onset_positive_weight = cv_meta["onset_positive_weight"] 
+                            )
+        
+        if verbose >= 1:
+            print(f"Evaluating {model_id}.")
+        
+        if split == DEFAULT_VAL_SPLIT_NAME:
+            # Validation split refers to the i-th group of the cv split.
+            ds_files = get_cv_filenames(
+                                    data_base_dir = data_base_dir, 
+                                    cv_split_name = cv_split_name, 
+                                    num_cv_groups = num_cv_groups, 
+                                    cv_index = i, 
+                                    all_except_group = False
+                                )
+        else: # Used for test split.
+            ds_files = get_split_filenames(data_base_dir, split_name=split)
+        
+        for onset_t in onset_threshold_list:
+            for frame_t in frame_threshold_list:
+                metrics_meta = [{"split_name": split, "onset_threshold": onset_t, "frame_threshold": frame_t}]
+                if verbose >= 1:
+                    print(metrics_meta)
+                
+                metrics_list = mir_evaluate_model_on_files(
+                    model = model,
+                    file_path = ds_files,
+                    onset_threshold = onset_t,
+                    frame_threshold = frame_t,
+                    verbosity = verbose
+                )
+                eval_output_path = _get_eval_output_json_path(
+                    base_path = cv_base_path,
+                    model_id = model_id,
+                    split_name = split,
+                    onset_threshold = onset_t,
+                    frame_threshold = frame_t
+                )
+                
+                if verbose >= 1:
+                    print(f"Writing to {eval_output_path}", end="\n\n")
+                json.dump(metrics_meta + metrics_list, open(eval_output_path, 'w'))
+
