@@ -11,6 +11,7 @@ from note_creation import model_output_to_notes
 from deserialize_guitarset import fetch_dataset, output_batch_to_single, get_split_filenames
 import glob
 from uuid import uuid4
+from utils import create_unique_folder
 from definitions import DEFAULT_LABEL_SMOOTHING, DEFAULT_ONSET_POSITIVE_WEIGHT
 
 #from librosa.display import specshow
@@ -18,13 +19,13 @@ from definitions import DEFAULT_LABEL_SMOOTHING, DEFAULT_ONSET_POSITIVE_WEIGHT
 
 
 def evaluate_model(model_id, split_name, onset_threshold, frame_threshold, base_path, verbosity):
-    model, ds_files = get_model_and_ds_files(model_id, split_name, base_path, verbosity=verbosity)
+    model, ds_files = _load_model_and_ds_split(model_id, split_name, base_path, verbosity=verbosity)
+
+    output_path = _get_eval_output_json_path(base_path, model_id, split_name, onset_threshold, frame_threshold)
+    assert not os.path.exists(output_path) # TODO Exceptions handling.
 
     metrics_meta = [{"split_name": split_name, "onset_threshold": onset_threshold, "frame_threshold": frame_threshold}]
-    output_path = f"{base_path}/{model_id}/{model_id}_eval_{split_name}_{int(onset_threshold*100)}_{int(frame_threshold*100)}.json"
-    if os.path.exists(output_path):
-        output_path = f"{base_path}/{model_id}/{model_id}_eval_{split_name}_{int(onset_threshold*100)}_{int(frame_threshold*100)}-{uuid4().hex}.json"
-
+    
     if verbosity >= 1:
         print(metrics_meta)
 
@@ -34,7 +35,7 @@ def evaluate_model(model_id, split_name, onset_threshold, frame_threshold, base_
         print(f"Writing to {output_path}", end="\n\n")
     json.dump(metrics_meta + metrics_list, open(output_path, 'w'))
 
-def get_model_and_ds_files(model_id, split_name, base_path, verbosity=1):
+def _load_model_and_ds_split(model_id, split_name, base_path, verbosity=1):
     model_folder = f"{base_path}/{model_id}"
     model = restore_model_from_weights(
             f"{model_folder}/{model_id}.h5", 
@@ -49,6 +50,10 @@ def get_model_and_ds_files(model_id, split_name, base_path, verbosity=1):
     ds_files = get_split_filenames(meta['data_base_dir'], split_name)
 
     return model, ds_files
+
+def _get_eval_output_json_path(base_path, model_id, split_name, onset_threshold, frame_threshold):
+    return f"{base_path}/{model_id}/{model_id}_eval_{split_name}_{int(onset_threshold*100)}_{int(frame_threshold*100)}.json"
+
 
 def mir_evaluate_model_on_files(model, file_path, onset_threshold, frame_threshold, mode="return", verbosity=1):
     """

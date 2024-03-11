@@ -6,9 +6,10 @@ from definitions import DEFAULT_BATCH, DEFAULT_ONSET_POSITIVE_WEIGHT, \
     DEFAULT_SHUFFLE_BUFFER, DEFAULT_LEARNING_RATE, DEFAULT_LABEL_SMOOTHING, \
     CQT_PROCESSED_BASE_PATH, DEFAULT_EPOCHS, \
     DEFAULT_ONSET_THRESHOLD_LIST, DEFAULT_FRAME_THRESHOLD_LIST, \
-    SAVED_MODELS_BASE_PATH
+    SAVED_MODELS_BASE_PATH, \
+    DEFAULT_CV_SPLIT_NAME
 from train import train
-from cross_validate import cross_validate
+from cross_validate import train_cv
 from read_evaluation import read_metrics
 from evaluate_model import evaluate_model
 
@@ -50,12 +51,12 @@ def evaluate_model_wrapper(args):
 def read_metrics_wrapper(args): # TODO add other arguments
     read_metrics(args.model_id, split_name=args.split_name)
 
-def cross_validate_wrapper(args):
+def train_cv_wrapper(args):
     if args.verbosity >= 1:
         print(args)
 
     with tf.device(f'/GPU:{args.gpu}'):
-        cross_validate(
+        train_cv(
             learning_rate = args.learning_rate,
             label_smoothing = args.label_smoothing,
             buffer_size = args.shuffle_buffer,
@@ -68,6 +69,7 @@ def cross_validate_wrapper(args):
             save_history = args.save_history,
             num_cv_groups = args.num_cv_groups,
             output_base_path = SAVED_MODELS_BASE_PATH,
+            cv_split_name = args.cv_split_name,
             model_index_to_resume = args.model_index_to_resume
         )
 
@@ -109,8 +111,8 @@ def parse_console():
     sp_read_eval.add_argument("model_id")
     sp_read_eval.add_argument("-s", "--split", dest="split_name", default="test")
 
-    sp_train_cv = subparsers.add_parser("train_cv", aliases="tc")
-    sp_train_cv.set_defaults(func=cross_validate_wrapper)
+    sp_train_cv = subparsers.add_parser("train_cv", aliases=["tc"])
+    sp_train_cv.set_defaults(func=train_cv_wrapper)
     sp_train_cv.add_argument("-r", "--lr", dest="learning_rate", type=float, metavar="LEARNING_RATE", default=DEFAULT_LEARNING_RATE)
     sp_train_cv.add_argument("-s", "--shuffle", dest="shuffle_buffer", type=int, metavar="SHUFFLE_BUFFER_SIZE", default=DEFAULT_SHUFFLE_BUFFER)
     sp_train_cv.add_argument("-b", "--batch", dest="batch_size", type=int, metavar="BATCH_SIZE", default=DEFAULT_BATCH)
@@ -124,10 +126,12 @@ def parse_console():
     sp_train_cv.add_argument("-y", "--dont_save_history", dest="save_history", action="store_false")
     sp_train_cv.add_argument("-g", "--gpu", dest="gpu", default=1)
     sp_train_cv.add_argument("-n", "--num_cv_groups", dest="num_cv_groups", type=int, default=10)
+    sp_train_cv.add_argument("-p", "--cv_split_name", dest="cv_split_name", default=DEFAULT_CV_SPLIT_NAME)
     sp_train_cv.add_argument("-x", "--model_index_to_resume", dest="model_index_to_resume", type=int)
 
 
-    #sp_evaluate_cv = subparsers.add_parser("evaluate_cv", aliases="ec")
+    #
+    #sp_evaluate_cv = subparsers.add_parser("evaluate_cv", aliases=["ec"])
 
 
 
