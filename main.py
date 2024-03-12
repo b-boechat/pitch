@@ -47,7 +47,8 @@ def read_evaluation_wrapper(args): # TODO add other arguments
         model_id = args.model_id, 
         split_name = args.split_name,
         keys = args.keys,
-        base_folder = args.base_folder
+        base_folder = args.base_folder,
+        print_results = args.print_results
     )
 
 def train_cv_wrapper(args):
@@ -119,7 +120,8 @@ def parse_console():
     sp_read_eval.add_argument("model_id")
     sp_read_eval.add_argument("-s", "--split", dest="split_name", default="test")
     sp_read_eval.add_argument("-b", "--base_folder", dest="base_folder", default=SAVED_MODELS_BASE_PATH)
-    sp_read_eval.add_argument("-k", "--keys", dest="keys", nargs="+", default=["all"]) # TODO add options
+    sp_read_eval.add_argument("-k", "--keys", dest="keys", nargs="+", default=["all"]) # TODO add options. F-measure_no_offset is always implied.
+    sp_read_eval.add_argument("-p", "--dont_print_results", dest="print_results", action="store_false")
     sp_read_eval.add_argument("-v", "--verbosity", dest="verbosity", action="count", default=0)
 
     sp_train_cv = subparsers.add_parser("train_cv", aliases=["tc"])
