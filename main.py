@@ -10,7 +10,7 @@ from definitions import DEFAULT_BATCH, DEFAULT_ONSET_POSITIVE_WEIGHT, \
     DEFAULT_CV_SPLIT_NAME
 from train import train
 from cross_validate import train_cv, evaluate_model_cv
-from read_evaluation import read_metrics
+from read_evaluation import read_evaluation
 from evaluate_model import evaluate_model
 
 def train_wrapper(args):
@@ -42,8 +42,13 @@ def evaluate_model_wrapper(args):
                     verbose = args.verbosity
                 )
 
-def read_metrics_wrapper(args): # TODO add other arguments
-    read_metrics(args.model_id, split_name=args.split_name)
+def read_evaluation_wrapper(args): # TODO add other arguments
+    read_evaluation(
+        model_id = args.model_id, 
+        split_name = args.split_name,
+        keys = args.keys,
+        base_folder = args.base_folder
+    )
 
 def train_cv_wrapper(args):
     with tf.device(f'/GPU:{args.gpu}'):
@@ -110,9 +115,12 @@ def parse_console():
 
     # "read_eval parser"
     sp_read_eval = subparsers.add_parser("read_eval", aliases="r")
-    sp_read_eval.set_defaults(func=read_metrics_wrapper)
+    sp_read_eval.set_defaults(func=read_evaluation_wrapper)
     sp_read_eval.add_argument("model_id")
     sp_read_eval.add_argument("-s", "--split", dest="split_name", default="test")
+    sp_read_eval.add_argument("-b", "--base_folder", dest="base_folder", default=SAVED_MODELS_BASE_PATH)
+    sp_read_eval.add_argument("-k", "--keys", dest="keys", nargs="+", default=["all"]) # TODO add options
+    sp_read_eval.add_argument("-v", "--verbosity", dest="verbosity", action="count", default=0)
 
     sp_train_cv = subparsers.add_parser("train_cv", aliases=["tc"])
     sp_train_cv.set_defaults(func=train_cv_wrapper)

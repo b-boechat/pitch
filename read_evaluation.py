@@ -1,12 +1,11 @@
 import pandas as pd
 import json
 from glob import glob
-from definitions import SAVED_MODELS_BASE_PATH
 
-def read_metrics(model_id, split_name="val", keys="all"):
+def read_evaluation(model_id, split_name, keys, base_folder):
     assert split_name in ("train", "val", "test")
 
-    model_folder = f"{SAVED_MODELS_BASE_PATH}/{model_id}"
+    model_folder = f"{base_folder}/{model_id}"
     best_f_measure = -1.0
     best_onset_threshold, best_frame_threshold = -1., -1.
 
@@ -15,10 +14,11 @@ def read_metrics(model_id, split_name="val", keys="all"):
         meta = dump[0]
         records = dump[1:]
         df = pd.DataFrame.from_records(records)
-        print(f"onset thresh: {meta['onset_threshold']}, frame thresh: {meta['frame_threshold']}")
+        print(f"onset thresh: {meta['onset_threshold']}, frame thresh: {meta['frame_threshold']}, split: {split_name}")
 
-        if keys == "all":
+        if keys == ["all"]:
             keys = [key for key in df.keys() if key != "id"]
+            print(keys)
 
 
         for key in keys:
