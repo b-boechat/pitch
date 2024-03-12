@@ -1,1 +1,0 @@
-Modificar split de treino, teste e validação para poder ser especificado por um arquivo, e não por uma estrutura de diretórios. Isso vai precisar de modificações em diversas funções, e idealmente as leituras de base de dados podem ser feitas em alto nível e funcionar dos dois jeitos:
