@@ -1,6 +1,2 @@
-saved_models/*
-!saved_models/.gitkeep
-
-processed/*
-build/*
-__pycache__/*
+/*
+!/saved_models

@@ -1,0 +1,1 @@
+{"learning_rate": 0.0001, "label_smoothing": 0.2, "buffer_size": 100, "batch_size": 32, "onset_positive_weight": 0.95, "epochs": 300, "data_base_dir": "base"}
