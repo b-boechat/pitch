@@ -4,12 +4,14 @@ from deserialize_guitarset import prepare_dataset_cv, get_cv_filenames, get_spli
 from train import _fit, _save_model
 from model import restore_model_from_weights
 from evaluate_model import _get_eval_output_json_path, mir_evaluate_model_on_files
+from read_evaluation import read_evaluation
 from definitions import DEFAULT_VAL_SPLIT_NAME, DEFAULT_TEST_SPLIT_NAME
 
 def train_cv(
         learning_rate, label_smoothing, buffer_size, batch_size, onset_positive_weight, epochs, verbose, 
         data_base_dir, output_cv_folder_id, save_history, num_cv_groups, output_base_path, cv_split_name, model_index_to_resume
     ):
+    # TODO change model_index_to_resume to a model_indexes like evaluate_model_cv
 
     if model_index_to_resume is None:
         output_cv_folder_path = create_unique_folder(output_base_path, output_cv_folder_id, verbose=verbose)
@@ -74,16 +76,19 @@ def train_cv(
             verbose=verbose
         )
 
-def evaluate_model_cv(cv_folder_id, cv_split_name, split, onset_threshold_list, frame_threshold_list, saved_models_base_path, verbose):
-    assert split in (DEFAULT_VAL_SPLIT_NAME, DEFAULT_TEST_SPLIT_NAME) # TODO For now, it's assumed that these are the splits names used (or implied, in the cal of "val" in a "cv" split).
+def evaluate_model_cv(cv_folder_id, cv_split_name, split, auto_thresholds, onset_threshold_list, frame_threshold_list, saved_models_base_path, model_indexes, verbose):
+    assert split in (DEFAULT_VAL_SPLIT_NAME, DEFAULT_TEST_SPLIT_NAME) # TODO For now, it's assumed that these are the splits names used (or implied, in the case of "val" in a "cv" split).
     
     cv_base_path = f"{saved_models_base_path}/{cv_folder_id}"
     cv_meta = json.load(open(f"{cv_base_path}/{cv_folder_id}_cv_meta.json", 'r'))
 
     num_cv_groups = cv_meta["num_cv_groups"]
     data_base_dir = cv_meta["data_base_dir"]
+
+    if "all" in model_indexes:
+        model_indexes = range(num_cv_groups)
     
-    for i in range(num_cv_groups):
+    for i in model_indexes:
         
         model_id = f"{cv_folder_id}_group_{i}"
         model = restore_model_from_weights(
@@ -106,6 +111,18 @@ def evaluate_model_cv(cv_folder_id, cv_split_name, split, onset_threshold_list, 
                                 )
         else: # Used for test split.
             ds_files = get_split_filenames(data_base_dir, split_name=split)
+
+        if auto_thresholds: # Perform evaluation on test split using the best thresholds from the validation split.
+            assert split == DEFAULT_TEST_SPLIT_NAME
+            onset_t, frame_t, _ = read_evaluation(
+                    model_id = model_id, 
+                    split_name = DEFAULT_VAL_SPLIT_NAME, 
+                    keys = ["F-measure_no_offset"], 
+                    base_folder = cv_base_path, 
+                    print_results = False
+                )
+            onset_threshold_list = [onset_t]
+            frame_threshold_list = [frame_t]
         
         for onset_t in onset_threshold_list:
             for frame_t in frame_threshold_list:

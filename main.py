@@ -76,9 +76,11 @@ def evaluate_model_cv_wrapper(args):
             cv_folder_id = args.cv_folder_id,
             cv_split_name = args.cv_split_name,
             split = args.split_name,
+            auto_thresholds = args.auto_thresholds,
             onset_threshold_list = args.onset_threshold_list,
             frame_threshold_list = args.frame_threshold_list,
             saved_models_base_path = args.base_path,
+            model_indexes = args.model_indexes,
             verbose = args.verbosity
         )
 
@@ -114,7 +116,7 @@ def parse_console():
     sp_evaluate.add_argument("-v", "--verbosity", dest="verbosity", action="count", default=0)
     sp_evaluate.add_argument("-g", "--gpu", dest="gpu", default=1)
 
-    # "read_eval parser"
+    # "read_eval" parser
     sp_read_eval = subparsers.add_parser("read_eval", aliases="r")
     sp_read_eval.set_defaults(func=read_evaluation_wrapper)
     sp_read_eval.add_argument("model_id")
@@ -124,6 +126,7 @@ def parse_console():
     sp_read_eval.add_argument("-p", "--dont_print_results", dest="print_results", action="store_false")
     sp_read_eval.add_argument("-v", "--verbosity", dest="verbosity", action="count", default=0)
 
+    # "train_cv" parser
     sp_train_cv = subparsers.add_parser("train_cv", aliases=["tc"])
     sp_train_cv.set_defaults(func=train_cv_wrapper)
     sp_train_cv.add_argument("-r", "--lr", dest="learning_rate", type=float, metavar="LEARNING_RATE", default=DEFAULT_LEARNING_RATE)
@@ -143,7 +146,7 @@ def parse_console():
     sp_train_cv.add_argument("-x", "--model_index_to_resume", dest="model_index_to_resume", type=int)
 
 
-    # "evaluate_model" parser
+    # "evaluate_cv" parser
     sp_evaluate_cv = subparsers.add_parser("evaluate_cv", aliases=["ec"])
     sp_evaluate_cv.set_defaults(func=evaluate_model_cv_wrapper)
     sp_evaluate_cv.add_argument("cv_folder_id")
@@ -154,6 +157,8 @@ def parse_console():
     sp_evaluate_cv.add_argument("-p", "--cv_split_name", dest="cv_split_name", default=DEFAULT_CV_SPLIT_NAME)
     sp_evaluate_cv.add_argument("-v", "--verbosity", dest="verbosity", action="count", default=0)
     sp_evaluate_cv.add_argument("-g", "--gpu", dest="gpu", default=1)
+    sp_evaluate_cv.add_argument("-a", "--auto", dest="auto_thresholds", action="store_true")
+    sp_evaluate_cv.add_argument("-x", "--model_indexes", dest="model_indexes", nargs="+", type=int, default=["all"])
 
 
 

@@ -17,7 +17,7 @@ def read_evaluation(model_id, split_name, keys, base_folder, print_results):
         if print_results:
             print(f"onset thresh: {meta['onset_threshold']}, frame thresh: {meta['frame_threshold']}, split: {split_name}")
 
-        if keys == ["all"]:
+        if "all" in keys:
             keys = [key for key in df.keys() if key != "id"]
 
         if "F-measure_no_offset" not in keys:
