@@ -6,6 +6,7 @@ def read_evaluation(model_id, split_name, keys, base_folder, print_results):
     assert split_name in ("train", "val", "test")
 
     model_folder = f"{base_folder}/{model_id}"
+    print(model_folder)
     best_f_measure = -1.0
     best_onset_threshold, best_frame_threshold = -1., -1.
 
@@ -16,6 +17,9 @@ def read_evaluation(model_id, split_name, keys, base_folder, print_results):
         df = pd.DataFrame.from_records(records)
         if print_results:
             print(f"onset thresh: {meta['onset_threshold']}, frame thresh: {meta['frame_threshold']}, split: {split_name}")
+
+        if "none" in keys:
+            keys = ["F-measure_no_offset"]
 
         if "all" in keys:
             keys = [key for key in df.keys() if key != "id"]

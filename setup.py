@@ -9,6 +9,18 @@ ext_modules = [
     Extension(
         "swgm",
         ["swgm.pyx"]
+    ),
+    Extension(
+        "sls_h_cy",
+        ["sls_h_cy.pyx"]
+    ),
+    Extension(
+        "sls_i_cy",
+        ["sls_i_cy.pyx"]
+    ),
+    Extension(
+        "baseline_sls_cy",
+        ["baseline_sls_cy.pyx"]
     )
 ]
 

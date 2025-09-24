@@ -41,19 +41,32 @@ def _fit(train_dataset, val_dataset, learning_rate, label_smoothing, onset_posit
 
     model = get_compiled_model(learning_rate = learning_rate, label_smoothing = label_smoothing, onset_positive_weight = onset_positive_weight, plot_summary = verbose)
 
-    history = model.fit(
-        train_dataset,
-        epochs = epochs,
-        verbose = verbose,
-        validation_data = val_dataset.take(batch_size//4),
-        validation_steps = 5
-    )
+    if val_dataset is not None:
 
-    if verbose >= 1:
-        print("Training dataset:")
-        model.evaluate(train_dataset, verbose = verbose)
-        print("Validation dataset:")
-        model.evaluate(val_dataset, verbose = verbose)
+        history = model.fit(
+            train_dataset,
+            epochs = epochs,
+            verbose = verbose,
+            validation_data = val_dataset.take(batch_size//4),
+            validation_steps = 5
+        )
+
+        if verbose >= 1:
+            print("Training dataset:")
+            model.evaluate(train_dataset, verbose = verbose)
+            print("Validation dataset:")
+            model.evaluate(val_dataset, verbose = verbose)
+
+    else:
+        history = model.fit(
+            train_dataset,
+            epochs = epochs,
+            verbose = verbose
+        )
+
+        if verbose >= 1:
+            print("Training dataset:")
+            model.evaluate(train_dataset, verbose = verbose)
 
     return model, history    
 

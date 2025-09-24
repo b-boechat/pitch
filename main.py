@@ -81,6 +81,7 @@ def evaluate_model_cv_wrapper(args):
             frame_threshold_list = args.frame_threshold_list,
             saved_models_base_path = args.base_path,
             model_indexes = args.model_indexes,
+            data_base_dir = args.data_base_dir,
             verbose = args.verbosity
         )
 
@@ -159,6 +160,7 @@ def parse_console():
     sp_evaluate_cv.add_argument("-g", "--gpu", dest="gpu", default=1)
     sp_evaluate_cv.add_argument("-a", "--auto", dest="auto_thresholds", action="store_true")
     sp_evaluate_cv.add_argument("-x", "--model_indexes", dest="model_indexes", nargs="+", type=int, default=["all"])
+    sp_evaluate_cv.add_argument("-i", "--data_base_dir", dest="data_base_dir", default=None) # Defaults to use the data base dir from the cv meta file.
 
 
 

@@ -14,13 +14,16 @@ from definitions import NUM_TRACKS_PER_RECORD_FILE, AUDIO_SAMPLE_RATE, AUDIO_SEG
                         CQT_TOTAL_BINS, RAW_DATASETS_BASE_PATH, PROCESSED_DATASETS_BASE_PATH
 from swgm import swgm_cython_wrapper
 from fls import fls_cython_wrapper
+from sls_h_cy import sls_h_cython_wrapper
+from sls_i_cy import sls_i_cython_wrapper
+from baseline_sls_cy import baseline_sls_cython_wrapper
 
 
 class GuitarsetSerializer:
     def __init__(self, destination_base_dir_name="test", 
                  source_dir_name="guitarset",
                  num_tracks_per_record_file=NUM_TRACKS_PER_RECORD_FILE,
-                 audio_sample_rate=AUDIO_SAMPLE_RATE, 
+                 audio_sample_rate=AUDIO_SAMPLE_RATE,
                  audio_segment_len_frames=AUDIO_SEGMENT_LEN_FRAMES, 
                  cqt_hop_length=CQT_HOP_LENGTH, 
                  cqt_total_bins=CQT_TOTAL_BINS,
@@ -30,6 +33,7 @@ class GuitarsetSerializer:
                  notes_total_bins=NOTES_TOTAL_BINS, 
                  notes_bins_per_octave=NOTES_BINS_PER_OCTAVE, 
                  combination_method_str=None,
+                 filter_scale_cqt=None, # Used for CQT if combination_method_str is None.
                  combination_params={},
                  ) -> None:
         """
@@ -49,8 +53,10 @@ class GuitarsetSerializer:
         self.notes_total_bins = notes_total_bins
         self.notes_bins_per_octave = notes_bins_per_octave
         if combination_method_str is not None:
-            assert combination_method_str in ("swgm", "fls")
+            assert combination_method_str in ("swgm", "fls", "sls_h", "sls_i", "baseline_sls")
         self.combination_method_str = combination_method_str
+        if combination_method_str is None:
+            self.filter_scale_cqt = filter_scale_cqt or 1.0
         self.combination_params = combination_params
     
     def _get_spectrogram(self, audio_data, filter_scales=[1/3, 2/3, 1], **kwargs):
@@ -60,17 +66,23 @@ class GuitarsetSerializer:
                                 hop_length=self.cqt_hop_length, fmin=self.minimum_annotation_frequency, 
                                 n_bins=self.cqt_total_bins, bins_per_octave=self.contours_bins_per_octave, tuning=0.0,
                                 filter_scale=scale) for scale in filter_scales])
-        audio_energy = np.linalg.norm(audio_data)
+        #audio_energy = np.linalg.norm(audio_data)
         specs_tensor = np.square(np.abs(specs_tensor)).astype(np.double)
-
-        specs_tensor *= audio_energy / np.linalg.norm(specs_tensor, axis=(1, 2), keepdims=True)
+        spec_energy = np.linalg.norm(specs_tensor, axis=(1, 2), keepdims=True)
+        specs_tensor *= spec_energy.mean() / spec_energy
 
         if self.combination_method_str == "swgm":
             spec = swgm_cython_wrapper(specs_tensor, **kwargs)
+        elif self.combination_method_str == "sls_h":
+            spec = sls_h_cython_wrapper(specs_tensor, **kwargs)
+        elif self.combination_method_str == "sls_i":
+            spec = sls_i_cython_wrapper(specs_tensor, **kwargs)
+        elif self.combination_method_str == "baseline_sls":
+            spec = baseline_sls_cython_wrapper(specs_tensor, **kwargs)
         else: # fls
             spec = fls_cython_wrapper(specs_tensor, **kwargs)
         spec = np.float32(spec)
-        spec *= audio_energy/np.sum(spec, axis=None)
+        spec *= spec_energy.mean()/np.sum(spec, axis=None)
         return librosa.power_to_db(spec).transpose()
 
 
@@ -78,7 +90,8 @@ class GuitarsetSerializer:
         # Calculate dB CQT spectrogram for audio data.
         return librosa.amplitude_to_db(np.abs(librosa.cqt(audio_data, sr=self.audio_sample_rate, 
                                 hop_length=self.cqt_hop_length, fmin=self.minimum_annotation_frequency, 
-                                n_bins=self.cqt_total_bins, bins_per_octave=self.contours_bins_per_octave, tuning=0.0)))
+                                n_bins=self.cqt_total_bins, bins_per_octave=self.contours_bins_per_octave, tuning=0.0,
+                                filter_scale=self.filter_scale_cqt)))
 
 
 
@@ -324,24 +337,47 @@ if __name__ == "__main__":
     #serializer = GuitarsetSerializer(destination_base_dir_name="fls_base", combination_method_str="fls")
     #serializer = GuitarsetSerializer(destination_base_dir_name="fls_fw11", combination_method_str="fls", combination_params={'freq_width': 11})
     #serializer = GuitarsetSerializer(destination_base_dir_name="swgm_base", combination_method_str="swgm")
+
+    #serializer = GuitarsetSerializer()
+    #serializer.show_size_information(splits=[0.9, 0.1], split_names=["cv", "test"], seed=1)
+
+    params = {
+        "destination_base_dir_name": "cqt_2025_fs_2_3_REDO",
+        "combination_method_str": None,
+        "num_tracks_per_record_file": 4,
+        "filter_scale_cqt": 2/3
+    }
+
+    #params = {
+    #    "destination_base_dir_name": "sls_h_2025_n40db",
+    #    "combination_method_str": "sls_h",
+    #    "num_tracks_per_record_file": 4,
+    #    "combination_params": {"energy_criterium_db": -40}
+    #}
+    
+    #params = {
+    #    "destination_base_dir_name": "baseline_sls_2025",
+    #    "combination_method_str": "baseline_sls",
+    #    "num_tracks_per_record_file": 4,
+    #}
+
+    print(params)
     serializer_cqt = GuitarsetSerializer(
-            destination_base_dir_name="cqt_all",
-            combination_method_str=None,
-            num_tracks_per_record_file=4
-        )
+        **params
+    )
     serializer_cqt.serialize(splits=[0.9, 0.1], split_names=["cv", "test"], seed=1)
 
-    serializer_swgm = GuitarsetSerializer(
-            destination_base_dir_name="swgm_all", 
-            combination_method_str="swgm",
-            num_tracks_per_record_file=4
-        )
-    serializer_swgm.serialize(splits=[0.9, 0.1], split_names=["cv", "test"], seed=1)
+    #serializer_swgm = GuitarsetSerializer(
+    #        destination_base_dir_name="swgm_all", 
+    #        combination_method_str="swgm",
+    #        num_tracks_per_record_file=4
+    #    )
+    #serializer_swgm.serialize(splits=[0.9, 0.1], split_names=["cv", "test"], seed=1)
 
-    serializer_fls = GuitarsetSerializer(
-        destination_base_dir_name="fls_fw11", 
-        combination_method_str="fls", 
-        combination_params={'freq_width': 11},
-        num_tracks_per_record_file=4
-    )
-    serializer_fls.serialize(splits=[0.9, 0.1], split_names=["cv", "test"], seed=1)
+    #serializer_fls = GuitarsetSerializer(
+    #    destination_base_dir_name="fls_fw11", 
+    #    combination_method_str="fls", 
+    #    combination_params={'freq_width': 11},
+    #    num_tracks_per_record_file=4
+    #)
+    #serializer_fls.serialize(splits=[0.9, 0.1], split_names=["cv", "test"], seed=1)

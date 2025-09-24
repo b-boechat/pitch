@@ -1,4 +1,5 @@
 import json
+import os
 from utils import create_unique_folder, get_folder_path
 from deserialize_guitarset import prepare_dataset_cv, get_cv_filenames, get_split_filenames
 from train import _fit, _save_model
@@ -53,7 +54,8 @@ def train_cv(
             batch_size = batch_size
         )
 
-        model, history = _fit(train_dataset, val_dataset, learning_rate, label_smoothing, onset_positive_weight, epochs, batch_size, verbose)
+        #model, history = _fit(train_dataset, val_dataset, learning_rate, label_smoothing, onset_positive_weight, epochs, batch_size, verbose)
+        model, history = _fit(train_dataset, None, learning_rate, label_smoothing, onset_positive_weight, epochs, batch_size, verbose) # Setting val_dataset to None to train faster without validation.
 
         if not save_history:
             history = None
@@ -76,14 +78,16 @@ def train_cv(
             verbose=verbose
         )
 
-def evaluate_model_cv(cv_folder_id, cv_split_name, split, auto_thresholds, onset_threshold_list, frame_threshold_list, saved_models_base_path, model_indexes, verbose):
+def evaluate_model_cv(cv_folder_id, cv_split_name, split, auto_thresholds, onset_threshold_list, frame_threshold_list, saved_models_base_path, model_indexes, data_base_dir, verbose):
     assert split in (DEFAULT_VAL_SPLIT_NAME, DEFAULT_TEST_SPLIT_NAME) # TODO For now, it's assumed that these are the splits names used (or implied, in the case of "val" in a "cv" split).
     
     cv_base_path = f"{saved_models_base_path}/{cv_folder_id}"
     cv_meta = json.load(open(f"{cv_base_path}/{cv_folder_id}_cv_meta.json", 'r'))
 
     num_cv_groups = cv_meta["num_cv_groups"]
-    data_base_dir = cv_meta["data_base_dir"]
+    data_base_dir = cv_meta["data_base_dir"] if data_base_dir is None else data_base_dir
+    if verbose >= 1:
+        print(f"Using data base dir: {data_base_dir}")
 
     if "all" in model_indexes:
         model_indexes = range(num_cv_groups)
@@ -126,6 +130,16 @@ def evaluate_model_cv(cv_folder_id, cv_split_name, split, auto_thresholds, onset
         
         for onset_t in onset_threshold_list:
             for frame_t in frame_threshold_list:
+                eval_output_path = _get_eval_output_json_path(
+                    base_path = cv_base_path,
+                    model_id = model_id,
+                    split_name = split,
+                    onset_threshold = onset_t,
+                    frame_threshold = frame_t
+                )
+                if os.path.exists(eval_output_path):
+                    print(f"Skipping pair ({onset_t}, {frame_t}) because it already exists.")
+                    continue
                 metrics_meta = [{"split_name": split, "onset_threshold": onset_t, "frame_threshold": frame_t}]
                 if verbose >= 1:
                     print(metrics_meta)
